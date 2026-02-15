@@ -1,8 +1,7 @@
-
-<br>
 <div align="center">
     <img src="docs/logo/logo-2.gif" width="700" height="250" />
 </div>
+<br>
   <h1>⚔️ Arena Survivors ⚔️</h1>
   <p><strong>Пошаговое создание игры на чистом JavaScript</strong></p>
   <p>Учебный проект по веб-разработке: от первого тега HTML до полноценного игрового цикла</p>
