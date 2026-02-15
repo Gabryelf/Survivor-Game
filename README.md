@@ -2,9 +2,11 @@
     <img src="docs/logo/logo-2.gif" width="700" height="250" />
 </div>
 <br>
-  <h1>⚔️ Arena Survivors ⚔️</h1>
-  <p><strong>Пошаговое создание игры на чистом JavaScript</strong></p>
-  <p>Учебный проект по веб-разработке: от первого тега HTML до полноценного игрового цикла</p>
+<div align="center">
+      <h1>⚔️ Arena Survivors ⚔️</h1>
+      <p><strong>Пошаговое создание игры на чистом JavaScript</strong></p>
+      <p>Учебный проект по веб-разработке: от первого тега HTML до полноценного игрового цикла</p>
+    </div>
   <br>
 
   [![Итерация 1 - Готова](https://img.shields.io/badge/Итерация_1-Скелет_и_Навигация-00ff88?style=for-the-badge)](##-итерация-1-скелет-и-навигация)
