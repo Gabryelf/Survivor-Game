@@ -1,74 +1,68 @@
+[![Итерация 1 - Готова](https://img.shields.io/badge/Итерация_5-Арена_и_Враги-5e3830?style=for-the-badge)](##-итерация-1-скелет-и-навигация)
 
-# 🎮 Arena Survivors — Версия 5: Боевая система и арена
+> [!NOTE]
+> Обновлено 20.02.2026
 
-> **Пошаговое руководство по добавлению игровой арены в стиле Vampire Survivors**  
-> *В этой версии мы добавим полноценный экран битвы, управление героем, врагов, систему опыта и камеру, следующую за игроком*
+<br>
 
----
+> [!IMPORTANT]
+> Внимательно реализуем каждый класс и метод из руководства, важно ошибки фиксить сразу, что бы потом не запутаться.
 
-## 📋 Содержание
-1. [Что мы будем делать](#что-мы-будем-делать)
-2. [Новые файлы для создания](#новые-файлы-для-создания)
-3. [Изменения в существующих файлах](#изменения-в-существующих-файлах)
-4. [Пошаговая реализация](#пошаговая-реализация)
-   - [Шаг 1: Добавляем стили для арены](#шаг-1-добавляем-стили-для-арены)
-   - [Шаг 2: Создаём базовый класс ArenaEntity](#шаг-2-создаём-базовый-класс-arenaentity)
-   - [Шаг 3: Создаём класс ArenaHero](#шаг-3-создаём-класс-arenahero)
-   - [Шаг 4: Создаём класс ArenaEnemy](#шаг-4-создаём-класс-arenaenemy)
-   - [Шаг 5: Создаём классы оружия и снарядов](#шаг-5-создаём-классы-оружия-и-снарядов)
-   - [Шаг 6: Создаём SpriteManager](#шаг-6-создаём-spritemanager)
-   - [Шаг 7: Создаём главный класс SurvivorsArena](#шаг-7-создаём-главный-класс-survivorsarena)
-   - [Шаг 8: Создаём ArenaController](#шаг-8-создаём-arenacontroller)
-   - [Шаг 9: Обновляем HTML](#шаг-9-обновляем-html)
-   - [Шаг 10: Обновляем game.js](#шаг-10-обновляем-gamejs)
-5. [Тестирование](#тестирование)
-6. [Задания для самостоятельной работы](#задания-для-самостоятельной-работы)
+<br>
+
+> [!WARNING]
+> Не выполненые самостоятельные задания, которые находятся в конце документа - это снижение бала за домашнее задание и возможное снижение итогового бала за зачет.
+
 
 ---
 
-## 🎯 Что мы будем делать
+# 🛡️ Arena Survivors v0.0.5: Добавляем боевую арену (Survivors-style)
 
-В предыдущей версии у нас были герои, магазин и крафт. Теперь мы добавим **полноценный игровой процесс**:
+Привет, команда! В четвертой версии у нас появилась система крафта. Теперь мы добавим **настоящую боевую арену** в стиле Survivors-like игр:
 
-| Компонент | Описание |
-|-----------|----------|
-| **Арену в стиле Survivors** | Большой мир, камера следует за героем |
-| **Управление WASD/стрелки** | Герой двигается по миру |
-| **Враги** | Спавнятся за экраном, бегут к герою |
-| **Оружие** | Автоматически атакует врагов |
-| **Система опыта** | Кристаллы опыта, повышение уровня |
-| **Джойстик для мобилок** | Управление с телефона |
-| **Пауза и выход** | Меню паузы, возврат в лобби |
+**Что нового:**
+- Большой мир (2400x1800), камера следит за героем
+- Враги спавнятся волнами, сложность растёт со временем
+- Система оружия (ближний и дальний бой)
+- Кристаллы опыта, которые выпадают из врагов
+- Джойстик для мобильных устройств
+- Пауза и выход с арены
+
+**Важно:** Мы не переписываем игру, а **добавляем новые файлы и методы** в существующий код. Каждый шаг — это конкретное место, куда нужно вставить код.
 
 ---
 
-## 📁 Новые файлы для создания
+## 📁 Новая структура проекта
 
-Нам нужно создать **5 новых файлов**:
+Мы добавляем новую папку `arena/` с пятью файлами:
 
 ```
-js/arena/
-├── GameEntity.js        # Базовые классы сущностей на арене
-├── SpriteManager.js     # Менеджер спрайтов (создание и хранение)
-├── SurvivorsArena.js    # Главный класс арены (игровой цикл)
-└── ArenaController.js   # Контроллер для запуска/остановки арены
-```
-
-И один новый CSS-файл:
-```
-arena_style.css          # Стили специально для арены
+arena-survivors/
+├── index.html
+├── style.css
+├── arena_style.css (НОВЫЙ)
+├── js/
+│   ├── core/ ...
+│   ├── arena/ (НОВАЯ ПАПКА)
+│   │   ├── GameEntity.js (НОВЫЙ)
+│   │   ├── SpriteManager.js (НОВЫЙ)
+│   │   ├── SurvivorsArena.js (НОВЫЙ)
+│   │   └── ArenaController.js (НОВЫЙ)
+│   ├── ui/ ...
+│   └── game.js (обновляем)
 ```
 
 ---
 
-## 📝 Пошаговая реализация
+## 🎨 Шаг 1. Создаём `arena_style.css`
 
-### Шаг 1: Добавляем стили для арены (`arena_style.css`)
-
-Создайте файл `arena_style.css` в корневой папке:
+Это новый файл стилей для арены. Создайте его в корневой папке.
 
 ```css
-/* Survivors-style арена */
+/* ==============================
+   Survivors-style арена
+   ============================== */
+
 .arena-game-container {
     width: 100%;
     height: 100%;
@@ -172,34 +166,42 @@ arena_style.css          # Стили специально для арены
 }
 ```
 
-**Объяснение:**
-- `touch-action: none` на canvas — отключает скролл при касании
-- Джойстик появляется только на мобильных (`max-width: 768px`)
-- Меню паузы центрируется поверх всего
-
 ---
 
-### Шаг 2: Создаём базовый класс ArenaEntity (`js/arena/GameEntity.js`)
+## 📁 Шаг 2. Создаём `js/arena/GameEntity.js`
 
-Этот файл содержит базовые классы для всех сущностей на арене.
+Этот файл содержит все классы сущностей на арене. Создайте папку `arena` и в ней этот файл.
 
-#### 2.1 Базовый класс ArenaEntity
+### Шаг 2.1. Базовый класс ArenaEntity
 
 ```javascript
+// ==============================
 // Базовый класс для всех сущностей на арене
+// ==============================
 class ArenaEntity {
+    /**
+     * Создаёт новую сущность
+     * @param {number} x - Координата X в мире
+     * @param {number} y - Координата Y в мире
+     * @param {number} radius - Радиус сущности
+     * @param {string} color - Цвет
+     */
     constructor(x, y, radius, color) {
-        this.worldX = x; // Координаты в мире (не на экране!)
+        this.worldX = x; // Координаты в мире
         this.worldY = y;
         this.radius = radius;
         this.color = color;
-        this.vx = 0;     // Скорость по X (направление)
-        this.vy = 0;     // Скорость по Y (направление)
-        this.speed = 0;   // Скорость движения
+        this.vx = 0;
+        this.vy = 0;
+        this.speed = 0;
         this.isActive = true;
     }
     
-    // Получить экранные координаты с учетом смещения камеры
+    /**
+     * Получить экранные координаты с учётом камеры
+     * @param {number} cameraX - Смещение камеры по X
+     * @returns {number} - Координата на экране
+     */
     getScreenX(cameraX) {
         return this.worldX - cameraX;
     }
@@ -208,6 +210,12 @@ class ArenaEntity {
         return this.worldY - cameraY;
     }
     
+    /**
+     * Обновление сущности
+     * @param {number} deltaTime - Время с прошлого кадра
+     * @param {number} worldWidth - Ширина мира
+     * @param {number} worldHeight - Высота мира
+     */
     update(deltaTime, worldWidth, worldHeight) {
         if (!this.isActive) return;
         
@@ -215,18 +223,24 @@ class ArenaEntity {
         this.worldX += this.vx * this.speed * deltaTime;
         this.worldY += this.vy * this.speed * deltaTime;
         
-        // Границы мира (не даём выйти за края)
+        // Границы мира
         this.worldX = Math.max(this.radius, Math.min(worldWidth - this.radius, this.worldX));
         this.worldY = Math.max(this.radius, Math.min(worldHeight - this.radius, this.worldY));
     }
     
+    /**
+     * Отрисовка сущности
+     * @param {CanvasRenderingContext2D} ctx - Контекст канваса
+     * @param {number} cameraX - Смещение камеры по X
+     * @param {number} cameraY - Смещение камеры по Y
+     */
     draw(ctx, cameraX, cameraY) {
         if (!this.isActive) return;
         
         const screenX = this.getScreenX(cameraX);
         const screenY = this.getScreenY(cameraY);
         
-        // Рисуем только если видно на экране (оптимизация)
+        // Рисуем только если видно на экране
         if (screenX + this.radius < 0 || screenX - this.radius > ctx.canvas.width ||
             screenY + this.radius < 0 || screenY - this.radius > ctx.canvas.height) {
             return;
@@ -243,32 +257,35 @@ class ArenaEntity {
 }
 ```
 
-**Ключевые моменты:**
-- Разделение на **мировые координаты** и **экранные координаты**
-- Камера сдвигает все объекты
-- Отсечение невидимых объектов (не рисуем то, что за экраном)
+### Шаг 2.2. Класс ArenaHero (герой на арене)
 
----
-
-### Шаг 3: Класс ArenaHero (добавить в `GameEntity.js`)
+Добавьте после `ArenaEntity`:
 
 ```javascript
+// ==============================
 // Класс героя на арене
+// ==============================
 class ArenaHero extends ArenaEntity {
+    /**
+     * Создаёт героя на арене
+     * @param {number} x - Координата X
+     * @param {number} y - Координата Y
+     * @param {Object} heroData - Данные героя из GameState
+     */
     constructor(x, y, heroData) {
         super(x, y, 20, '#4aff4a');
-        this.heroData = heroData;        // Ссылка на данные героя из GameState
+        this.heroData = heroData;
         this.hp = heroData.currentStats.hp;
         this.maxHp = heroData.baseStats.hp;
         this.attack = heroData.currentStats.attack;
-        this.speed = heroData.currentStats.speed * 3; // Скорость передвижения
+        this.speed = heroData.currentStats.speed * 3;
         
         // Оружие
         this.weapons = [];
         this.loadWeapons();
         
         // Сбор опыта
-        this.expMagnet = 150; // Радиус притяжения кристаллов
+        this.expMagnet = 150;
         this.level = heroData.level;
         this.exp = heroData.exp;
         
@@ -280,12 +297,14 @@ class ArenaHero extends ArenaEntity {
         this.spriteManager = window.spriteManager;
     }
     
+    /**
+     * Загружает оружие из экипировки героя
+     */
     loadWeapons() {
-        // Если у героя есть оружие в экипировке, используем его
         if (this.heroData.equipment && this.heroData.equipment.weapon) {
             this.weapons.push(new ArenaWeapon(this, this.heroData.equipment.weapon));
         } else {
-            // Иначе базовое оружие (кулаки)
+            // Оружие по умолчанию
             this.weapons.push(new ArenaWeapon(this, {
                 name: 'Кулаки',
                 damage: 5,
@@ -297,15 +316,19 @@ class ArenaHero extends ArenaEntity {
         }
     }
     
+    /**
+     * Получение урона
+     * @param {number} amount - Количество урона
+     */
     takeDamage(amount) {
         this.hp -= amount;
         if (this.hp < 0) this.hp = 0;
         
-        // Визуальная обратная связь (красный цвет при получении урона)
+        // Визуальная обратная связь
         this.color = '#ff0000';
         setTimeout(() => this.color = '#4aff4a', 100);
         
-        return this.hp <= 0; // true если герой умер
+        return this.hp <= 0;
     }
     
     update(deltaTime, worldWidth, worldHeight) {
@@ -324,7 +347,7 @@ class ArenaHero extends ArenaEntity {
         const screenX = this.getScreenX(cameraX);
         const screenY = this.getScreenY(cameraY);
         
-        // Получаем спрайт героя (разный для лука и меча)
+        // Получаем спрайт героя
         const sprite = this.spriteManager.getSprite('hero', 
             this.heroData.equipment && this.heroData.equipment.weapon && 
             this.heroData.equipment.weapon.type === 'ranged' ? 'bow' : 'default'
@@ -350,24 +373,28 @@ class ArenaHero extends ArenaEntity {
         this.weapons.forEach(w => w.draw(ctx, cameraX, cameraY));
     }
     
+    /**
+     * Добавление опыта
+     * @param {number} amount - Количество опыта
+     */
     addExp(amount) {
         this.exp += amount;
-        // Каждые 100 опыта - новый уровень
         while (this.exp >= 100) {
             this.levelUp();
         }
     }
     
+    /**
+     * Повышение уровня на арене
+     */
     levelUp() {
         this.level++;
         this.exp -= 100;
         
-        // Улучшаем характеристики
         this.maxHp += 10;
         this.hp = this.maxHp;
         this.attack += 2;
         
-        // Обновляем данные героя в GameState
         this.heroData.level = this.level;
         this.heroData.exp = this.exp;
         this.heroData.baseStats.hp = this.maxHp;
@@ -376,24 +403,32 @@ class ArenaHero extends ArenaEntity {
 }
 ```
 
----
+### Шаг 2.3. Класс ArenaEnemy (враг)
 
-### Шаг 4: Класс ArenaEnemy (добавить в `GameEntity.js`)
+Добавьте после `ArenaHero`:
 
 ```javascript
+// ==============================
 // Класс врага на арене
+// ==============================
 class ArenaEnemy extends ArenaEntity {
+    /**
+     * Создаёт врага
+     * @param {number} x - Координата X
+     * @param {number} y - Координата Y
+     * @param {number} difficulty - Множитель сложности
+     */
     constructor(x, y, difficulty = 1) {
         super(x, y, 18, '#ff4a4a');
         
         this.difficulty = difficulty;
-        this.hp = 20 + 5 * difficulty;
+        this.hp = 20 + 10 * difficulty;
         this.maxHp = this.hp;
         this.attack = 3 + 2 * difficulty;
-        this.speed = 30 + 8 * difficulty;
-        this.expValue = 5 + 5 * difficulty; // Сколько опыта даёт
+        this.speed = 10 + 2 * difficulty;
+        this.expValue = 5 + 5 * difficulty;
         
-        // Тип врага (разные спрайты)
+        // Тип врага
         const enemyTypes = [
             { name: 'Гоблин', sprite: 'goblin', color: '#0f8a0f', attackSpeed: 1.0 },
             { name: 'Скелет', sprite: 'skeleton', color: '#aaa', attackSpeed: 0.8 },
@@ -407,7 +442,7 @@ class ArenaEnemy extends ArenaEntity {
         this.name = this.type.name;
         
         this.damageCooldown = 0;
-        this.damageInterval = this.type.attackSpeed;
+        this.damageInterval = 1.0 / this.type.attackSpeed;
         
         this.spriteManager = window.spriteManager;
     }
@@ -416,17 +451,16 @@ class ArenaEnemy extends ArenaEntity {
         super.update(deltaTime, worldWidth, worldHeight);
         
         if (hero && hero.isActive) {
-            // Вектор к герою
             const dx = hero.worldX - this.worldX;
             const dy = hero.worldY - this.worldY;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
             if (distance > 0) {
-                this.vx = dx / distance; // Направление к герою
+                this.vx = dx / distance;
                 this.vy = dy / distance;
             }
             
-            // Атака, если подошли вплотную
+            // Атака при касании
             if (distance < this.radius + hero.radius) {
                 this.damageCooldown -= deltaTime;
                 if (this.damageCooldown <= 0) {
@@ -439,7 +473,7 @@ class ArenaEnemy extends ArenaEntity {
     
     takeDamage(amount) {
         this.hp -= amount;
-        this.color = '#ffffff'; // Белый при получении урона
+        this.color = '#ffffff';
         setTimeout(() => this.color = this.type.color, 100);
         return this.hp <= 0;
     }
@@ -452,6 +486,8 @@ class ArenaEnemy extends ArenaEntity {
         
         // Получаем спрайт врага
         const sprite = this.spriteManager.getSprite(this.spriteKey);
+        
+        // Рисуем спрайт
         ctx.drawImage(sprite, screenX - 20, screenY - 20, 40, 40);
         
         // Полоска здоровья
@@ -464,43 +500,40 @@ class ArenaEnemy extends ArenaEntity {
 }
 ```
 
----
+### Шаг 2.4. Классы оружия и снарядов
 
-### Шаг 5: Классы оружия и снарядов (добавить в `GameEntity.js`)
+Добавьте после `ArenaEnemy`:
 
 ```javascript
+// ==============================
 // Класс оружия на арене
+// ==============================
 class ArenaWeapon {
     constructor(owner, weaponData) {
-        this.owner = owner;           // Кто владеет оружием (герой)
-        this.data = weaponData;        // Данные оружия
-        this.cooldown = 0;             // Текущее время перезарядки
-        this.projectiles = [];          // Созданные снаряды
+        this.owner = owner;
+        this.data = weaponData;
+        this.cooldown = 0;
+        this.projectiles = [];
     }
     
     update(deltaTime) {
-        // Уменьшаем кулдаун
         if (this.cooldown > 0) {
             this.cooldown -= deltaTime;
         }
         
-        // Если кулдаун прошел - атакуем
         if (this.cooldown <= 0) {
             this.attack();
             this.cooldown = this.data.cooldown || 1.0;
         }
         
-        // Обновляем снаряды
         this.projectiles = this.projectiles.filter(p => p.isActive);
         this.projectiles.forEach(p => p.update(deltaTime));
     }
     
     attack() {
         if (this.data.type === 'melee' || !this.data.type) {
-            // Ближний бой - создаём область атаки
             this.projectiles.push(new MeleeProjectile(this.owner, this.data));
         } else {
-            // Дальний бой - ищем цель и стреляем
             const arena = window.currentArena;
             if (arena && arena.enemies.length > 0) {
                 const target = arena.enemies[Math.floor(Math.random() * arena.enemies.length)];
@@ -514,7 +547,7 @@ class ArenaWeapon {
     draw(ctx, cameraX, cameraY) {
         this.projectiles.forEach(p => p.draw(ctx, cameraX, cameraY));
         
-        // Рисуем кулдаун (круговая шкала)
+        // Рисуем кулдаун
         if (this.cooldown > 0) {
             const screenX = this.owner.getScreenX(cameraX);
             const screenY = this.owner.getScreenY(cameraY);
@@ -528,7 +561,9 @@ class ArenaWeapon {
     }
 }
 
+// ==============================
 // Класс снаряда дальнего боя
+// ==============================
 class RangedProjectile {
     constructor(owner, data, target) {
         this.owner = owner;
@@ -544,21 +579,18 @@ class RangedProjectile {
     
     update(deltaTime) {
         if (!this.target || !this.target.isActive) {
-            this.isActive = false; // Цель умерла
+            this.isActive = false;
             return;
         }
         
-        // Летим к цели
         const dx = this.target.worldX - this.worldX;
         const dy = this.target.worldY - this.worldY;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
         if (distance < 10) {
-            // Долетели
             this.target.takeDamage(this.damage);
             this.isActive = false;
         } else {
-            // Продолжаем движение
             this.worldX += (dx / distance) * this.speed * deltaTime;
             this.worldY += (dy / distance) * this.speed * deltaTime;
         }
@@ -579,14 +611,16 @@ class RangedProjectile {
     }
 }
 
-// Класс атаки ближнего боя
+// ==============================
+// Класс снаряда ближнего боя
+// ==============================
 class MeleeProjectile {
     constructor(owner, data) {
         this.owner = owner;
         this.data = data;
-        this.lifetime = 0.2; // Атака длится 0.2 секунды
+        this.lifetime = 0.2;
         this.isActive = true;
-        this.hitEnemies = new Set(); // Каких врагов уже задели
+        this.hitEnemies = new Set();
     }
     
     update(deltaTime) {
@@ -600,7 +634,6 @@ class MeleeProjectile {
         const screenX = this.owner.getScreenX(cameraX);
         const screenY = this.owner.getScreenY(cameraY);
         
-        // Рисуем радиус атаки
         ctx.beginPath();
         ctx.arc(screenX, screenY, this.data.range || 60, 0, Math.PI * 2);
         ctx.strokeStyle = '#ffff00';
@@ -610,21 +643,29 @@ class MeleeProjectile {
         ctx.setLineDash([]);
     }
 }
+```
 
+### Шаг 2.5. Класс ExpGem (кристалл опыта)
+
+Добавьте в конце файла:
+
+```javascript
+// ==============================
 // Класс кристалла опыта
+// ==============================
 class ExpGem extends ArenaEntity {
     constructor(x, y, value) {
         super(x, y, 10, '#ffd700');
         this.value = value;
         this.spriteManager = window.spriteManager;
-        this.floatOffset = 0; // Для анимации парения
+        this.floatOffset = 0;
         this.floatDir = 1;
     }
     
     update(deltaTime, worldWidth, worldHeight) {
         super.update(deltaTime, worldWidth, worldHeight);
         
-        // Анимация парения вверх-вниз
+        // Анимация парения
         this.floatOffset += deltaTime * 2 * this.floatDir;
         if (Math.abs(this.floatOffset) > 5) {
             this.floatDir *= -1;
@@ -641,14 +682,25 @@ class ExpGem extends ArenaEntity {
         ctx.drawImage(sprite, screenX - 10, screenY - 10, 20, 20);
     }
 }
+
+// Делаем все классы глобальными
+window.ArenaEntity = ArenaEntity;
+window.ArenaHero = ArenaHero;
+window.ArenaEnemy = ArenaEnemy;
+window.ArenaWeapon = ArenaWeapon;
+window.ExpGem = ExpGem;
 ```
 
 ---
 
-### Шаг 6: Создаём SpriteManager (`js/arena/SpriteManager.js`)
+## 📁 Шаг 3. Создаём `js/arena/SpriteManager.js`
+
+Этот файл отвечает за создание и хранение спрайтов.
 
 ```javascript
+// ==============================
 // Менеджер спрайтов для загрузки и отображения изображений
+// ==============================
 class SpriteManager {
     constructor() {
         this.sprites = {};
@@ -657,7 +709,7 @@ class SpriteManager {
     }
     
     loadSprites() {
-        // Создаём спрайты через canvas (в реальном проекте тут были бы PNG)
+        // Создаём спрайты через canvas для простоты
         this.createHeroSprites();
         this.createEnemySprites();
         this.createEffectSprites();
@@ -666,7 +718,7 @@ class SpriteManager {
     }
     
     createHeroSprites() {
-        // Создаём спрайт героя через canvas (временное решение)
+        // Создаём спрайт героя (меч)
         const canvas = document.createElement('canvas');
         canvas.width = 40;
         canvas.height = 40;
@@ -841,20 +893,22 @@ class SpriteManager {
     }
 }
 
+// Делаем глобальным
 window.SpriteManager = SpriteManager;
 ```
 
-**Объяснение:**
-- Мы создаём спрайты программно через Canvas
-- В реальном проекте тут были бы загруженные PNG
-- Менеджер хранит все спрайты и раздаёт их по запросу
-
 ---
 
-### Шаг 7: Создаём главный класс SurvivorsArena (`js/arena/SurvivorsArena.js`)
+## 📁 Шаг 4. Создаём `js/arena/SurvivorsArena.js`
+
+Это основной класс арены, управляющий игровым циклом.
+
+### Шаг 4.1. Конструктор и основные поля
 
 ```javascript
+// ==============================
 // Основной класс арены в стиле Survivors
+// ==============================
 class SurvivorsArena {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
@@ -918,7 +972,13 @@ class SurvivorsArena {
             });
         }
     }
-    
+```
+
+### Шаг 4.2. Методы инициализации и управления
+
+Добавьте после конструктора:
+
+```javascript
     // Обновление камеры (следит за героем)
     updateCamera() {
         if (!this.hero) return;
@@ -975,7 +1035,13 @@ class SurvivorsArena {
         this.isRunning = false;
         window.currentArena = null;
     }
-    
+```
+
+### Шаг 4.3. Игровой цикл и обновление
+
+Добавьте методы игрового цикла:
+
+```javascript
     gameLoop(timestamp) {
         if (!this.isRunning) return;
         
@@ -1002,7 +1068,7 @@ class SurvivorsArena {
         // Управление героем
         this.handleHeroMovement(deltaTime);
         
-        // Обновляем героя (передаём размеры мира)
+        // Обновляем героя
         this.hero.update(deltaTime, this.worldWidth, this.worldHeight);
         
         // Обновляем камеру
@@ -1056,17 +1122,21 @@ class SurvivorsArena {
             return true;
         });
     }
-    
+```
+
+### Шаг 4.4. Вспомогательные методы
+
+Добавьте остальные методы:
+
+```javascript
     handleHeroMovement(deltaTime) {
         let moveX = 0, moveY = 0;
         
-        // Клавиатура
         if (this.keys['ArrowUp'] || this.keys['w'] || this.keys['W']) moveY -= 1;
         if (this.keys['ArrowDown'] || this.keys['s'] || this.keys['S']) moveY += 1;
         if (this.keys['ArrowLeft'] || this.keys['a'] || this.keys['A']) moveX -= 1;
         if (this.keys['ArrowRight'] || this.keys['d'] || this.keys['D']) moveX += 1;
         
-        // Джойстик
         if (this.joystick.active) {
             moveX = this.joystick.dirX;
             moveY = this.joystick.dirY;
@@ -1120,27 +1190,26 @@ class SurvivorsArena {
         const seconds = Math.floor(this.gameTime % 60);
         document.getElementById('arenaTimer').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
-    
+```
+
+### Шаг 4.5. Методы отрисовки
+
+Добавьте методы для рисования:
+
+```javascript
     draw() {
         // Очищаем канвас
         this.ctx.clearRect(0, 0, this.screenWidth, this.screenHeight);
         
-        // Рисуем фон (траву)
+        // Рисуем фон
         this.drawBackground();
-        
-        // Рисуем декорации
         this.drawDecorations();
-        
-        // Рисуем сетку (для ориентира)
         this.drawGrid();
         
-        // Рисуем кристаллы опыта
+        // Рисуем сущности
         this.expGems.forEach(gem => gem.draw(this.ctx, this.cameraX, this.cameraY));
-        
-        // Рисуем врагов
         this.enemies.forEach(enemy => enemy.draw(this.ctx, this.cameraX, this.cameraY));
         
-        // Рисуем героя
         if (this.hero) {
             this.hero.draw(this.ctx, this.cameraX, this.cameraY);
         }
@@ -1153,7 +1222,6 @@ class SurvivorsArena {
     }
     
     drawBackground() {
-        // Текстура травы (градиент)
         const gradient = this.ctx.createLinearGradient(0, 0, 0, this.screenHeight);
         gradient.addColorStop(0, '#1a4a1a');
         gradient.addColorStop(1, '#2a5a2a');
@@ -1216,7 +1284,13 @@ class SurvivorsArena {
             this.ctx.stroke();
         }
     }
-    
+```
+
+### Шаг 4.6. Методы управления состоянием
+
+Добавьте в конце файла:
+
+```javascript
     togglePause() {
         if (this.isPaused) {
             this.resume();
@@ -1236,12 +1310,10 @@ class SurvivorsArena {
     exitArena() {
         this.stop();
         
-        // Возвращаемся в лобби
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById('screenLobby').classList.add('active');
         document.querySelector('.game-nav').style.display = 'flex';
         
-        // Сохраняем прогресс героя
         if (this.hero && this.hero.heroData) {
             this.hero.heroData.currentStats.hp = this.hero.hp;
             this.hero.heroData.level = this.hero.level;
@@ -1255,7 +1327,7 @@ class SurvivorsArena {
     initControls() {
         window.addEventListener('keydown', (e) => {
             if (e.key.startsWith('Arrow') || ['w', 'a', 's', 'd', 'W', 'A', 'S', 'D'].includes(e.key)) {
-                e.preventDefault(); // Отключаем скролл страницы стрелками
+                e.preventDefault();
                 this.keys[e.key] = true;
             }
             
@@ -1271,7 +1343,6 @@ class SurvivorsArena {
             }
         });
         
-        // Джойстик для мобилок
         const joystickBase = document.querySelector('.joystick-base');
         const joystickThumb = document.getElementById('joystickThumb');
         
@@ -1320,14 +1391,20 @@ class SurvivorsArena {
     }
 }
 
+// Делаем глобальным
 window.SurvivorsArena = SurvivorsArena;
 ```
 
 ---
 
-### Шаг 8: Создаём ArenaController (`js/arena/ArenaController.js`)
+## 📁 Шаг 5. Создаём `js/arena/ArenaController.js`
+
+Этот класс связывает арену с основной игрой.
 
 ```javascript
+// ==============================
+// Контроллер арены (связывает с основной игрой)
+// ==============================
 class ArenaController {
     constructor() {
         // Создаём менеджер спрайтов
@@ -1356,6 +1433,12 @@ class ArenaController {
         });
     }
     
+    /**
+     * Начинает вылазку на арену
+     * @param {string} location - Название локации
+     * @param {Object} hero - Герой
+     * @returns {boolean} - Успешно ли началась вылазка
+     */
     startExpedition(location, hero) {
         if (!hero) {
             alert('Сначала выберите героя в меню "Герои"!');
@@ -1388,67 +1471,22 @@ window.ArenaController = ArenaController;
 
 ---
 
-### Шаг 9: Обновляем HTML
+## 📝 Шаг 6. Обновляем `index.html`
 
-В `index.html` нужно добавить:
-
-1. Подключение новых CSS-файлов:
-```html
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="arena_style.css"> <!-- НОВЫЙ -->
-```
-
-2. Новый экран арены внутри `<main class="game-screen">`:
-
-```html
-<!-- Экран 5: Арена (Survivors-style) -->
-<div class="screen" id="screenArena">
-    <div class="arena-game-container">
-        <!-- Верхняя панель с информацией -->
-        <div class="arena-header">
-            <div class="arena-stats">
-                <div class="stat">❤️ <span id="arenaHp">100</span>/<span id="arenaMaxHp">100</span></div>
-                <div class="stat">⚔️ <span id="arenaAttack">15</span></div>
-                <div class="stat">⏱️ <span id="arenaTimer">0:00</span></div>
-                <div class="stat">🎯 Ур. <span id="arenaLevel">1</span></div>
-            </div>
-            <button class="pause-btn" id="pauseBtn">⏸️</button>
-        </div>
-
-        <!-- Canvas для игры -->
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
-
-        <!-- Джойстик для мобильных устройств -->
-        <div class="joystick-container" id="joystickContainer">
-            <div class="joystick-base">
-                <div class="joystick-thumb" id="joystickThumb"></div>
-            </div>
-        </div>
-
-        <!-- Пауза/меню выхода -->
-        <div class="pause-menu" id="pauseMenu" style="display: none;">
-            <h3>Пауза</h3>
-            <button class="resume-btn" id="resumeBtn">Продолжить</button>
-            <button class="exit-arena-btn" id="exitArenaBtn">Выйти с арены</button>
-        </div>
-    </div>
-</div>
-```
-
-3. Подключение новых скриптов (порядок важен!):
+В самом конце файла, в блоке подключения скриптов, добавьте новые строки для файлов арены:
 
 ```html
 <!-- Core классы -->
 <script src="js/core/GameState.js"></script>
 <script src="js/core/Item.js"></script>
-<script src="js/core/Hero.js"></script>
+<script src="js/core/Hero.js"></script> 
 <script src="js/core/Shop.js"></script>
 <script src="js/core/Recipe.js"></script>
 
 <!-- Классы арены (НОВЫЕ) -->
 <script src="js/arena/GameEntity.js"></script>
-<script src="js/arena/SpriteManager.js"></script>
-<script src="js/arena/SurvivorsArena.js"></script>
+<script src="js/arena/SpriteManager.js"></script> 
+<script src="js/arena/SurvivorsArena.js"></script> 
 <script src="js/arena/ArenaController.js"></script>
 
 <!-- UI -->
@@ -1456,45 +1494,37 @@ window.ArenaController = ArenaController;
 <script src="js/game.js"></script>
 ```
 
+И в начале файла, после `style.css`, добавьте подключение стилей арены:
+
+```html
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="arena_style.css"> <!-- НОВОЕ -->
+```
+
 ---
 
-### Шаг 10: Обновляем game.js
+## 🚀 Шаг 7. Обновляем `js/game.js`
 
-Замените обработчики кнопок локаций на новый код:
+В файле запуска нужно добавить создание контроллера арены и улучшить обработчик кнопок локаций.
+
+### Шаг 7.1. Добавляем создание контроллера
+
+Найдите место после создания UI и добавьте:
 
 ```javascript
-// ==============================
-// Глобальный файл - точка запуска.
-// ==============================
-
-// Создаем героев через класс Hero
-const warrior = new window.Hero('1', 'Воин', { hp: 120, attack: 18, defense: 12, speed: 8 }, 'warrior');
-const archer = new window.Hero('2', 'Лучник', { hp: 80, attack: 22, defense: 6, speed: 15 }, 'archer');
-const mage = new window.Hero('3', 'Маг', { hp: 70, attack: 25, defense: 4, speed: 12 }, 'mage');
-
-// Добавляем тестовые предметы в инвентарь
-warrior.addToInventory(new window.Consumable('consumable_hp_small', 'Малое зелье здоровья', 'common', 5, 'heal', 30, '🧪'));
-warrior.addToInventory(new window.Weapon('weapon_sword_1', 'Деревянный меч', 'common', 10, { damage: 5, range: 1 }, '⚔️'));
-
-// Добавляем героев в состояние
-window.GameState.heroes.push(warrior);
-window.GameState.heroes.push(archer);
-window.GameState.heroes.push(mage);
-
-// Автоматически выбираем первого героя
-window.GameState.selectHero('1');
-
-// Инициализируем магазин
-window.GameState.initShop();
-
-// Инициализируем систему крафта
-window.GameState.initRecipes();
-
 // Запуск UI
 const ui = new window.UIManager();
-const arenaController = new window.ArenaController();
 
-// НОВЫЙ ОБРАБОТЧИК: Начало вылазки на арену
+// +++ НОВОЕ: создаём контроллер арены
+const arenaController = new window.ArenaController();
+```
+
+### Шаг 7.2. Обновляем обработчик кнопок локаций
+
+Замените существующий обработчик `start-match-btn` на этот:
+
+```javascript
+// Обработчики кнопок локаций
 document.querySelectorAll('.start-match-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
         const location = e.target.closest('.location-card').dataset.location;
@@ -1515,7 +1545,7 @@ document.querySelectorAll('.start-match-btn').forEach(btn => {
         // Тратим ресурс
         window.GameState.updateResource(costType, -1);
         
-        // Начинаем вылазку
+        // +++ НОВОЕ: начинаем вылазку на арену
         const started = arenaController.startExpedition(location, hero);
         
         if (!started) {
@@ -1524,123 +1554,90 @@ document.querySelectorAll('.start-match-btn').forEach(btn => {
         }
     });
 });
-
-console.log('Игра запущена! Магазин, крафт и арена инициализированы.');
 ```
 
-**Важно:** Удалите старые обработчики, которые давали только опыт и материалы. Теперь матч запускает настоящую арену.
+### Шаг 7.3. Удаляем старый обработчик
+
+В файле `game.js` есть два одинаковых обработчика. Удалите второй (он начинается с `// Обработчики кнопок локаций` и содержит логику с опытом и наградами). Он больше не нужен, так как награды теперь выдаются на арене.
 
 ---
 
-## 🧪 Тестирование
+## ✅ Что мы добавили
 
-После всех изменений проверьте:
-
-### Проверка запуска арены
-- [ ] Выберите героя
-- [ ] Нажмите "Начать" на любой локации
-- [ ] Должен открыться экран арены с канвасом
-- [ ] Навигация внизу должна исчезнуть
-
-### Проверка управления
-- [ ] WASD или стрелки — движение героя
-- [ ] Герой не выходит за границы мира
-- [ ] Камера следует за героем
-
-### Проверка боя
-- [ ] Враги спавнятся и бегут к герою
-- [ ] Оружие автоматически атакует (желтый круг)
-- [ ] При получении урона герой краснеет
-- [ ] При смерти врага выпадает кристалл опыта
-
-### Проверка системы опыта
-- [ ] Кристаллы притягиваются к герою
-- [ ] При сборе опыта шкала заполняется
-- [ ] При достижении 100 опыта — уровень повышается
-- [ ] Характеристики растут
-
-### Проверка паузы
-- [ ] ESC открывает меню паузы
-- [ ] Кнопка "Продолжить" возвращает в игру
-- [ ] Кнопка "Выйти с арены" возвращает в лобби
-
-### Проверка мобильного управления
-- [ ] На мобильных устройствах появляется джойстик
-- [ ] Джойстик работает и двигает героя
+| Файл | Что нового |
+|------|------------|
+| `arena_style.css` | Стили для арены (джойстик, пауза, канвас) |
+| `GameEntity.js` | Классы ArenaEntity, ArenaHero, ArenaEnemy, ArenaWeapon, ExpGem |
+| `SpriteManager.js` | Создание и хранение спрайтов |
+| `SurvivorsArena.js` | Основной игровой цикл, физика, отрисовка |
+| `ArenaController.js` | Связь арены с основной игрой |
+| `index.html` | Подключение новых файлов и стилей |
+| `game.js` | Создание контроллера, обновлённый обработчик |
 
 ---
 
-## 📚 Что мы изучили в этой версии
+## 💻 Как проверить, что всё работает
 
-1. **Игровой цикл** — requestAnimationFrame, deltaTime
-2. **Камера и координаты** — мировые vs экранные координаты
-3. **Обработка ввода** — клавиатура и тач-события
-4. **Оптимизация** — отсечение невидимых объектов
-5. **Композиция** — Arena содержит Hero, Enemy, Weapon
-6. **Анимация** — простые эффекты (краснение при получении урона)
-7. **Мобильная адаптация** — джойстик для телефонов
-
----
-
-## 🎯 Задания для самостоятельной работы
-
-1. **Добавить новый тип врага**
-   - Создайте "Вампира" с красным цветом
-   - Добавьте в enemyTypes
-
-2. **Улучшить UI на арене**
-   - Добавьте отображение текущего оружия
-   - Показывать иконку меча или лука
-
-4. **Разные типы оружия**
-   - Сделайте так, чтобы лук стрелял снарядами, а меч бил по площади
-   - Реализуйте магический посох с медленной, но мощной атакой
-
-5. **Боссы**
-   - Каждые 2 минуты спавнить большого врага с высоким HP
-   - Босс даёт много опыта и редкие материалы
-
-6. **Укрытия на арене**
-   - Добавьте деревья и камни, за которыми можно прятаться
-   - Враги должны обходить препятствия
-
-7. **Сложность по времени**
-   - Увеличивайте скорость спавна и характеристики врагов со временем
-
-8. **Разные локации**
-   - Лес: зеленые враги, много деревьев
-   - Пустыня: желтые враги, меньше препятствий
-   - Завод: механические враги, металлические декорации
+1. **Выберите героя** на экране "Герои"
+2. **Нажмите "Начать"** на любой локации
+3. Должен открыться экран арены с зелёным героем в центре
+4. **Управляйте героем** стрелками или WASD
+5. Враги должны появляться и атаковать героя
+6. При убийстве врагов выпадают жёлтые кристаллы опыта
+7. При сборе опыта герой повышает уровень (растут характеристики)
+8. **Нажмите ESC** — появится меню паузы
+9. **Выйдите с арены** — вернётесь в лобби, характеристики героя сохранятся
 
 ---
 
-## 🐛 Возможные проблемы и их решение
+## 💡 Микро-задания для самостоятельной работы
 
-| Проблема | Решение |
-|----------|---------|
-| Герой не двигается | Проверьте `handleHeroMovement()` и `keys` |
-| Враги не спавнятся | Проверьте `spawnTimer` и `spawnEnemy()` |
-| Оружие не атакует | Проверьте `update()` в ArenaWeapon |
-| Нет спрайтов | Проверьте SpriteManager и `window.spriteManager` |
-| Джойстик не работает на телефоне | Проверьте touch-события и `preventDefault()` |
-| Вылетает при выходе с арены | Проверьте `exitArena()` и `window.currentArena` |
+Выберите **одно** задание, которое улучшит код без добавления новых механик:
+
+### 🔹 Задание 1. Добавить проверку границ мира для камеры
+Сейчас камера может выйти за границы мира при некоторых условиях. Добавьте проверку в метод `updateCamera`, чтобы этого не происходило.
+
+**Где:** `SurvivorsArena.js`, метод `updateCamera()`
 
 ---
 
-## 🏁 Заключение
+### 🔹 Задание 2. Улучшить спавн врагов
+Враги спавнятся слишком близко к герою. Добавьте проверку, чтобы они появлялись не ближе 300 пикселей от героя.
 
-Поздравляю! Вы добавили в игру **полноценный игровой процесс в стиле Vampire Survivors**. Теперь игрок может:
-
-1. 🎮 Выбрать героя и начать битву
-2. 🏃 Бегать по большому миру с камерой
-3. 👾 Убивать врагов, собирать опыт
-4. ⬆️ Повышать уровень и становиться сильнее
-5. 📱 Играть на телефоне через джойстик
-
-**Следующие шаги:** 
-- Добавить больше оружия и типов врагов
-- Реализовать выбор умений при повышении уровня
-- Создать разные локации с уникальными врагами
+**Где:** `SurvivorsArena.js`, метод `spawnEnemy()`
 
 ---
 
+### 🔹 Задание 3. Добавить таймер в заголовок страницы
+Во время боя на арене обновляйте заголовок страницы (`document.title`) на "⚔️ X:XX - Arena Survivors", где X:XX — текущее время боя.
+
+**Где:** `SurvivorsArena.js`, метод `updateUI()`
+
+---
+
+### 🔹 Задание 4. Улучшить отображение сложности
+В углу экрана сейчас просто число. Добавьте звёздочки: "★" для каждой единицы сложности (например, "★★☆" для сложности 2.5).
+
+**Где:** `SurvivorsArena.js`, метод `draw()`, строка с отрисовкой сложности
+
+---
+
+### 🔹 Задание 5. Добавить подсветку активного оружия
+Когда оружие готово к атаке (cooldown = 0), рисуйте вокруг героя зелёное свечение.
+
+**Где:** `GameEntity.js`, метод `ArenaHero.draw()`, после отрисовки оружия
+
+---
+
+### 🎯 Как выполнять
+
+1. Выберите одно задание
+2. Внесенные изменения пометьте коментариями.
+3. Внесите изменения (буквально 3-10 строк кода)
+4. Сделайте commit и push
+5. В комментариях к домашнему заданию укажите улучшение.
+
+<br>
+
+> [!TIP]
+> Тестируем - при выборе локации должна открываться боевая арена, герой в бою должен двигаться и атаковать, враги должны спавниться постоянно и уничтожаться героем, герой должен зарабатывать опыт и матч должен ставиться на паузу, а так же матч можно завершить или проиграть.  **Переходим к версии 0.0.6 в следующую ветку**
