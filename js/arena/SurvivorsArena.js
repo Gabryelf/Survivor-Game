@@ -4,13 +4,11 @@ class SurvivorsArena {
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
 
-        // Размеры канваса (экрана)
+        // Временные размеры до реального расчета
         this.screenWidth = 800;
         this.screenHeight = 600;
-        this.canvas.width = this.screenWidth;
-        this.canvas.height = this.screenHeight;
 
-        // Размеры мира (гораздо больше экрана)
+        // Размеры мира
         this.worldWidth = 2400;
         this.worldHeight = 1800;
 
@@ -32,20 +30,16 @@ class SurvivorsArena {
         // Параметры спавна
         this.spawnTimer = 0;
         this.spawnInterval = 1.5;
-        this.maxEnemies = 30;
+        this.maxEnemies = 40;
 
-        this.killCount = 0;
-        this.totalExpGained = 0;
-        this.battleResult = null;
-        this.pendingSkillChoice = false;
+        this.skillChoiceShown = false;
 
         // Управление
         this.keys = {};
         this.joystick = { active: false, dirX: 0, dirY: 0 };
 
-        // Декорации (камни, деревья)
+        // Декорации
         this.decorations = [];
-        this.generateDecorations();
 
         // Время последнего кадра
         this.lastTimestamp = 0;
@@ -53,58 +47,79 @@ class SurvivorsArena {
         // Для глобального доступа
         window.currentArena = this;
 
+        // Сначала устанавливаем размеры канваса
+        this.resizeCanvas();
+
+        // Потом генерируем декорации
+        this.generateDecorations();
+
+        // Инициализируем управление
         this.initControls();
+
+        // Обработчик ресайза
+        this.initResizeHandler();
     }
 
-    // Добавить в начало файла после определения класса
-checkForLevelUp() {
-    const heroData = this.hero.heroData;
-    const oldLevel = heroData.level;
-    
-    // Проверяем, не накопилось ли опыта на новый уровень
-    while (heroData.exp >= heroData.expToNextLevel) {
-        const gainedLevel = heroData.levelUp();
-        
-        // Если это 3-й уровень и мы получили очко навыка
-        if (gainedLevel && heroData.level % 3 === 0) {
-            console.log('Сработал выбор навыка на уровне', heroData.level);
-            this.showSkillChoice();
+    resizeCanvas() {
+        const container = this.canvas.parentElement;
+        if (!container) return;
+
+        // Получаем доступную высоту (минус хедер)
+        const headerHeight = 60; // Примерная высота хедера
+        const containerWidth = container.clientWidth;
+        const containerHeight = window.innerHeight - headerHeight - 50; // Отнимаем хедер и немного запаса
+
+        if (containerWidth > 0 && containerHeight > 0) {
+            this.screenWidth = containerWidth;
+            this.screenHeight = containerHeight;
+            this.canvas.width = containerWidth;
+            this.canvas.height = containerHeight;
+
+            console.log('Canvas resized to:', this.screenWidth, 'x', this.screenHeight);
         }
     }
-    
-    // Обновляем UI если уровень изменился
-    if (oldLevel !== heroData.level) {
-        this.updateUI();
+
+    initResizeHandler() {
+        window.addEventListener('resize', () => {
+            if (this.isRunning) {
+                this.resizeCanvas();
+
+                // Обновляем камеру
+                if (this.hero) {
+                    this.updateCamera();
+                }
+            }
+        });
     }
-}
 
     generateDecorations() {
+        this.decorations = [];
         // Создаём декорации по всему миру
-        for (let i = 0; i < 50; i++) {
+        for (let i = 0; i < 100; i++) {
             this.decorations.push({
                 x: Math.random() * this.worldWidth,
                 y: Math.random() * this.worldHeight,
-                type: Math.floor(Math.random() * 3), // 0-дерево, 1-камень, 2-куст
+                type: Math.floor(Math.random() * 3),
                 size: 20 + Math.random() * 30
             });
         }
     }
 
-    // Обновление камеры (следит за героем)
     updateCamera() {
         if (!this.hero) return;
 
-        // Камера следует за героем, но не выходит за границы мира
         this.cameraX = this.hero.worldX - this.screenWidth / 2;
         this.cameraY = this.hero.worldY - this.screenHeight / 2;
 
-        // Ограничиваем камеру границами мира
         this.cameraX = Math.max(0, Math.min(this.worldWidth - this.screenWidth, this.cameraX));
         this.cameraY = Math.max(0, Math.min(this.worldHeight - this.screenHeight, this.cameraY));
     }
 
     init(heroData) {
         console.log('Инициализация арены с героем:', heroData);
+
+        // Сначала обновляем размеры канваса
+        this.resizeCanvas();
 
         // Размещаем героя в центре мира
         this.hero = new ArenaHero(this.worldWidth / 2, this.worldHeight / 2, heroData);
@@ -118,11 +133,18 @@ checkForLevelUp() {
         this.updateCamera();
 
         // Создаем начальных врагов
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 8; i++) {
             this.spawnEnemy();
         }
 
+        // Скрываем меню паузы при старте
+        const pauseMenu = document.getElementById('pauseMenu');
+        if (pauseMenu) {
+            pauseMenu.style.display = 'none';
+        }
+
         console.log('Арена инициализирована, врагов:', this.enemies.length);
+        console.log('Canvas размер:', this.screenWidth, 'x', this.screenHeight);
     }
 
     start() {
@@ -139,6 +161,7 @@ checkForLevelUp() {
     resume() {
         this.isPaused = false;
         this.lastTimestamp = performance.now();
+        this.skillChoiceShown = false;
         requestAnimationFrame((timestamp) => this.gameLoop(timestamp));
     }
 
@@ -147,105 +170,35 @@ checkForLevelUp() {
         window.currentArena = null;
     }
 
-    // Исправить метод gameLoop для корректного завершения
     gameLoop(timestamp) {
         if (!this.isRunning) return;
 
         const deltaTime = Math.min((timestamp - this.lastTimestamp) / 1000, 0.1);
         this.lastTimestamp = timestamp;
 
-        if (!this.isPaused && !this.pendingSkillChoice && this.hero && this.hero.hp > 0) {
+        if (!this.isPaused && this.hero) {
             this.update(deltaTime);
         }
 
         this.draw();
 
-        // Проверяем смерть героя
-        if (this.hero && this.hero.hp <= 0 && !this.battleResult) {
-            this.gameOver(false);
-        }
-
         requestAnimationFrame((ts) => this.gameLoop(ts));
     }
 
-
-    // для показа выбора навыка
-    showSkillChoice() {
-        if (!this.hero || this.pendingSkillChoice) return;
-        
-        const heroData = this.hero.heroData;
-        
-        // Проверяем, есть ли очки навыков
-        if (heroData.skillPoints <= 0) {
-            console.log('Нет очков навыков');
-            return;
-        }
-        
-        console.log('Показываем выбор навыка, очков:', heroData.skillPoints);
-        
-        this.pause();
-        this.pendingSkillChoice = true;
-        
-        const choices = heroData.getSkillChoices();
-        console.log('Доступные навыки:', choices);
-        
-        if (choices.length === 0) {
-            console.log('Нет доступных навыков');
-            this.pendingSkillChoice = false;
-            this.resume();
-            return;
-        }
-        
-        const modal = document.getElementById('skillChoiceModal');
-        const choicesContainer = document.getElementById('skillChoices');
-        
-        choicesContainer.innerHTML = '';
-        
-        choices.forEach(skill => {
-            const card = document.createElement('div');
-            card.className = 'skill-choice-card';
-            card.innerHTML = `
-                <div class="skill-choice-icon">${skill.icon}</div>
-                <div class="skill-choice-name">${skill.name}</div>
-                <div class="skill-choice-desc">${skill.getDescription()}</div>
-            `;
-            
-            card.addEventListener('click', () => {
-                const success = heroData.learnSkill(skill.id);
-                if (success) {
-                    console.log('Навык изучен:', skill.name);
-                    this.pendingSkillChoice = false;
-                    modal.style.display = 'none';
-                    this.updateUI(); // Обновляем отображение навыков
-                    this.resume();
-                }
-            });
-            
-            choicesContainer.appendChild(card);
-        });
-        
-        modal.style.display = 'block';
-    }
-
     update(deltaTime) {
-        if (this.pendingSkillChoice) return;
-        // Обновляем игровое время
         this.gameTime += deltaTime;
         this.difficulty = 1 + Math.floor(this.gameTime / 60) * 0.5;
 
-        // Обновляем UI
         this.updateUI();
+        this.checkSkillChoice(); // Проверяем, нужно ли выбрать навык
 
-        // Управление героем
+        if (this.isPaused) return; // Если игра на паузе, не обновляем дальше
+
         this.handleHeroMovement(deltaTime);
-
-        // Обновляем героя (передаём размеры мира)
         this.hero.update(deltaTime, this.worldWidth, this.worldHeight);
-
-        // Обновляем камеру
         this.updateCamera();
 
-        // Проверяем смерть героя
+
         if (this.hero.hp <= 0) {
             this.gameOver();
             return;
@@ -258,32 +211,47 @@ checkForLevelUp() {
             this.spawnTimer = this.spawnInterval / this.difficulty;
         }
 
-        // Обновляем врагов
+        // Обновляем врагов и проверяем попадания
         this.enemies = this.enemies.filter(enemy => {
             enemy.update(deltaTime, this.hero, this.worldWidth, this.worldHeight);
 
             // Проверяем попадания от оружия
-            this.hero.weapons.forEach(weapon => {
-                weapon.projectiles.forEach(projectile => {
-                    if (projectile instanceof MeleeProjectile && !projectile.hitEnemies.has(enemy)) {
-                        if (this.checkMeleeHit(this.hero, enemy, projectile.data.range || 60)) {
-                            enemy.takeDamage(projectile.data.damage || 5);
-                            projectile.hitEnemies.add(enemy);
+            if (this.hero && this.hero.weapons) {
+                this.hero.weapons.forEach(weapon => {
+                    if (weapon && weapon.projectiles) {
+                        if (weapon.data && weapon.data.type === 'ranged') {
+                            weapon.projectiles.forEach(projectile => {
+                                if (projectile && projectile.isActive && projectile.target === enemy) {
+                                    const distance = Math.hypot(
+                                        projectile.worldX - enemy.worldX,
+                                        projectile.worldY - enemy.worldY
+                                    );
+                                    if (distance < enemy.radius + 5) {
+                                        enemy.takeDamage(projectile.damage);
+                                        projectile.isActive = false;
 
-                            if (enemy.hp <= 0) {
-                                this.spawnExpGem(enemy.worldX, enemy.worldY, enemy.expValue);
-                            }
+                                        if (enemy.hp <= 0) {
+                                            this.spawnExpGem(enemy.worldX, enemy.worldY, enemy.expValue);
+                                        }
+                                    }
+                                }
+                            });
+                        } else {
+                            weapon.projectiles.forEach(projectile => {
+                                if (projectile && projectile.isActive && projectile.hitEnemies && !projectile.hitEnemies.has(enemy)) {
+                                    if (this.checkMeleeHit(this.hero, enemy, (projectile.data && projectile.data.range) || 60)) {
+                                        enemy.takeDamage((projectile.data && projectile.data.damage) || 5);
+                                        projectile.hitEnemies.add(enemy);
+
+                                        if (enemy.hp <= 0) {
+                                            this.spawnExpGem(enemy.worldX, enemy.worldY, enemy.expValue);
+                                        }
+                                    }
+                                }
+                            });
                         }
                     }
                 });
-            });
-
-            // При убийстве врага
-            if (enemy.hp <= 0) {
-                this.killCount++;
-                this.totalExpGained += enemy.expValue;
-                this.hero.onEnemyKilled(); // Вызываем метод обработки убийства
-                this.spawnExpGem(enemy.worldX, enemy.worldY, enemy.expValue);
             }
 
             return enemy.hp > 0;
@@ -291,18 +259,24 @@ checkForLevelUp() {
 
         // Обновляем кристаллы опыта
         this.expGems = this.expGems.filter(gem => {
+            if (!gem) return false;
             gem.update(deltaTime, this.worldWidth, this.worldHeight);
 
-            const distance = Math.hypot(gem.worldX - this.hero.worldX, gem.worldY - this.hero.worldY);
-            if (distance < this.hero.radius + gem.radius + this.hero.expMagnet) {
-                this.hero.addExp(gem.value);
-                this.checkForLevelUp();
-                return false;
+            if (this.hero) {
+                const distance = Math.hypot(gem.worldX - this.hero.worldX, gem.worldY - this.hero.worldY);
+                if (distance < this.hero.radius + gem.radius + this.hero.expMagnet) {
+                    this.hero.addExp(gem.value);
+                    return false;
+                }
             }
             return true;
         });
+    }
 
-
+    checkMeleeHit(hero, enemy, range) {
+        if (!hero || !enemy) return false;
+        const distance = Math.hypot(hero.worldX - enemy.worldX, hero.worldY - enemy.worldY);
+        return distance < hero.radius + enemy.radius + range;
     }
 
     handleHeroMovement(deltaTime) {
@@ -318,25 +292,19 @@ checkForLevelUp() {
             moveY = this.joystick.dirY;
         }
 
-        if (moveX !== 0 || moveY !== 0) {
+        if (moveX !== 0 || moveY !== 0 && this.hero) {
             const length = Math.sqrt(moveX * moveX + moveY * moveY);
             this.hero.vx = moveX / length;
             this.hero.vy = moveY / length;
-        } else {
+        } else if (this.hero) {
             this.hero.vx = 0;
             this.hero.vy = 0;
         }
     }
 
-    checkMeleeHit(hero, enemy, range) {
-        const distance = Math.hypot(hero.worldX - enemy.worldX, hero.worldY - enemy.worldY);
-        return distance < hero.radius + enemy.radius + range;
-    }
-
     spawnEnemy() {
-        // Спавним врага за пределами видимости камеры
         let x, y;
-        const viewMargin = 200;
+        const viewMargin = 300;
 
         do {
             x = Math.random() * this.worldWidth;
@@ -356,93 +324,58 @@ checkForLevelUp() {
         this.expGems.push(new ExpGem(x, y, value));
     }
 
-    // Обновить метод updateUI для отображения навыков
     updateUI() {
         if (!this.hero) return;
-        
-        const heroData = this.hero.heroData;
-        
-        // HP бар
+
+        // Обновляем прогресс бары
         const hpPercent = (this.hero.hp / this.hero.maxHp) * 100;
-        document.getElementById('arenaHpBar').style.width = `${hpPercent}%`;
-        document.getElementById('arenaHpText').textContent = `${Math.floor(this.hero.hp)}/${this.hero.maxHp}`;
-        
-        // EXP бар - исправляем расчёт процента
-        const expPercent = (heroData.exp / heroData.expToNextLevel) * 100;
-        document.getElementById('arenaExpBar').style.width = `${expPercent}%`;
-        document.getElementById('arenaExpText').textContent = `Ур. ${heroData.level}`;
-        
-        // Таймер
+        const expPercent = ((this.hero.exp % 100) / 100) * 100;
+
+        const hpBar = document.getElementById('arenaHpBar');
+        const hpText = document.getElementById('arenaHpText');
+        const expBar = document.getElementById('arenaExpBar');
+        const expText = document.getElementById('arenaExpText');
+        const timer = document.getElementById('arenaTimer');
+
+        if (hpBar) hpBar.style.width = `${hpPercent}%`;
+        if (hpText) hpText.textContent = `${Math.floor(this.hero.hp)}/${this.hero.maxHp}`;
+
+        if (expBar) expBar.style.width = `${expPercent}%`;
+        if (expText) expText.textContent = `Ур. ${this.hero.level} (${this.hero.exp % 100}/100)`;
+
+        // Обновляем время
         const minutes = Math.floor(this.gameTime / 60);
         const seconds = Math.floor(this.gameTime % 60);
-        document.getElementById('arenaTimer').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        
-        // Иконка оружия
-        if (this.hero.heroData.equipment && this.hero.heroData.equipment.weapon) {
-            const weapon = this.hero.heroData.equipment.weapon;
-            document.getElementById('arenaWeaponEmoji').textContent = weapon.icon || '⚔️';
-            
-            if (this.hero.weapons[0]) {
-                const cooldownPercent = (this.hero.weapons[0].cooldown / (this.hero.weapons[0].data.cooldown || 1)) * 100;
-                document.getElementById('arenaWeaponCooldown').style.height = `${cooldownPercent}%`;
-            }
-        }
-        
-        // Навыки
-        const skillsContainer = document.getElementById('arenaSkillIcons');
-        skillsContainer.innerHTML = '';
-        
-        heroData.skills.forEach(skill => {
-            const slot = document.createElement('div');
-            slot.className = 'skill-slot';
-            slot.title = `${skill.name} (Ур. ${skill.level})\n${skill.getDescription()}`;
-            slot.textContent = skill.icon;
-            skillsContainer.appendChild(slot);
-        });
-        
-        // Добавляем пустые слоты до 3
-        for (let i = heroData.skills.length; i < 3; i++) {
-            const empty = document.createElement('div');
-            empty.className = 'skill-slot empty';
-            empty.textContent = '?';
-            skillsContainer.appendChild(empty);
-        }
+        if (timer) timer.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
 
     draw() {
-        // Очищаем канвас
+        if (!this.ctx) return;
+
         this.ctx.clearRect(0, 0, this.screenWidth, this.screenHeight);
 
-        // Рисуем фон (траву)
         this.drawBackground();
-
-        // Рисуем декорации
         this.drawDecorations();
-
-        // Рисуем сетку (для ориентира)
         this.drawGrid();
 
-        // Рисуем кристаллы опыта
-        this.expGems.forEach(gem => gem.draw(this.ctx, this.cameraX, this.cameraY));
+        if (this.expGems) {
+            this.expGems.forEach(gem => {
+                if (gem) gem.draw(this.ctx, this.cameraX, this.cameraY);
+            });
+        }
 
-        // Рисуем врагов
-        this.enemies.forEach(enemy => enemy.draw(this.ctx, this.cameraX, this.cameraY));
+        if (this.enemies) {
+            this.enemies.forEach(enemy => {
+                if (enemy) enemy.draw(this.ctx, this.cameraX, this.cameraY);
+            });
+        }
 
-        // Рисуем героя
         if (this.hero) {
             this.hero.draw(this.ctx, this.cameraX, this.cameraY);
         }
-
-        // Рисуем информацию
-        this.ctx.fillStyle = '#fff';
-        this.ctx.font = '16px Arial';
-        this.ctx.fillText(`Сложность: ${this.difficulty.toFixed(1)}x`, 10, 30);
-        this.ctx.fillText(`Врагов: ${this.enemies.length}`, 10, 50);
-        this.ctx.fillText(`Позиция: ${Math.floor(this.hero.worldX)}, ${Math.floor(this.hero.worldY)}`, 10, 70);
     }
 
     drawBackground() {
-        // Текстура травы (градиент)
         const gradient = this.ctx.createLinearGradient(0, 0, 0, this.screenHeight);
         gradient.addColorStop(0, '#1a4a1a');
         gradient.addColorStop(1, '#2a5a2a');
@@ -451,6 +384,8 @@ checkForLevelUp() {
     }
 
     drawDecorations() {
+        if (!this.decorations) return;
+
         this.decorations.forEach(dec => {
             const screenX = dec.x - this.cameraX;
             const screenY = dec.y - this.cameraY;
@@ -510,96 +445,24 @@ checkForLevelUp() {
     }
 
     togglePause() {
+        const pauseMenu = document.getElementById('pauseMenu');
+        if (!pauseMenu) return;
+
         if (this.isPaused) {
             this.resume();
-            document.getElementById('pauseMenu').style.display = 'none';
+            pauseMenu.style.display = 'none';
         } else {
             this.pause();
-            document.getElementById('pauseMenu').style.display = 'block';
+            pauseMenu.style.display = 'block';
         }
     }
 
-    //  завершение боя
-    gameOver(isVictory = false) {
+    gameOver() {
         this.isRunning = false;
-        
-        const heroData = this.hero.heroData;
-        
-        if (isVictory) {
-            // Начисляем опыт
-            const expGained = this.totalExpGained;
-            heroData.addExp(expGained);
-            
-            // Начисляем ресурсы через GameState
-            const rewards = window.GameState.addBattleRewards(
-                this.gameTime,
-                this.killCount,
-                true
-            );
-            
-            this.battleResult = {
-                victory: true,
-                time: this.gameTime,
-                kills: this.killCount,
-                expGained: expGained,
-                level: heroData.level,
-                rewards: rewards.rewards
-            };
-        } else {
-            // Поражение - штраф 50% опыта за этот бой
-            const expLoss = Math.floor(this.totalExpGained * 0.5);
-            heroData.exp = Math.max(0, heroData.exp - expLoss);
-            
-            this.battleResult = {
-                victory: false,
-                time: this.gameTime,
-                kills: this.killCount,
-                expLoss: expLoss
-            };
-        }
-        
-        this.showBattleResult();
+        alert('💀 Игра окончена! Вы продержались ' + Math.floor(this.gameTime) + ' секунд');
+        this.exitArena();
     }
 
-    // Метод для показа результатов боя
-    showBattleResult() {
-        const modal = document.getElementById('battleResultModal');
-        const title = document.getElementById('resultTitle');
-        const rewards = document.getElementById('resultRewards');
-        
-        title.className = this.battleResult.victory ? 'victory' : 'defeat';
-        title.textContent = this.battleResult.victory ? 'Победа!' : 'Поражение...';
-        
-        let rewardsHtml = '';
-        
-        if (this.battleResult.victory) {
-            const r = this.battleResult.rewards;
-            rewardsHtml = `
-                <div class="reward-item">✨ Опыт: +${this.battleResult.expGained}</div>
-                <div class="reward-item">🍞 Провизия: +${r.expeditionResources.proviziya}</div>
-                <div class="reward-item">⛽ Топливо: +${r.expeditionResources.toplivo}</div>
-                <div class="reward-item">🔧 Инструменты: +${r.expeditionResources.instrumenty}</div>
-                <div class="reward-item">🪵 Древесина: +${r.craftingMaterials.material_wood || 0}</div>
-                <div class="reward-item">⛓️ Железо: +${r.craftingMaterials.material_iron || 0}</div>
-                <div class="reward-item">🧶 Ткань: +${r.craftingMaterials.material_cloth || 0}</div>
-                ${r.item ? `<div class="reward-item">🎁 Найден предмет: ${r.item.name}</div>` : ''}
-                <div class="reward-item">⚔️ Убито врагов: ${this.battleResult.kills}</div>
-                <div class="reward-item">⏱️ Время: ${Math.floor(this.battleResult.time)} сек</div>
-            `;
-        } else {
-            rewardsHtml = `
-                <div class="reward-item">💔 Потеряно опыта: ${this.battleResult.expLoss}</div>
-                <div class="reward-item">⚔️ Убито врагов: ${this.battleResult.kills}</div>
-                <div class="reward-item">⏱️ Время: ${Math.floor(this.battleResult.time)} сек</div>
-            `;
-        }
-        
-        rewards.innerHTML = rewardsHtml;
-        modal.style.display = 'block';
-    }
-
-
-    // Обновить метод exitArena
     exitArena() {
         this.stop();
 
@@ -607,23 +470,31 @@ checkForLevelUp() {
         document.getElementById('screenLobby').classList.add('active');
         document.querySelector('.game-nav').style.display = 'flex';
 
-        // Обновляем данные героя
+        // Показываем основной хедер
+        const gameHeader = document.querySelector('.game-header');
+        if (gameHeader) {
+            gameHeader.style.display = 'flex';
+            gameHeader.style.visibility = 'visible';
+        }
+
+        // Скрываем меню паузы
+        const pauseMenu = document.getElementById('pauseMenu');
+        if (pauseMenu) {
+            pauseMenu.style.display = 'none';
+        }
+
         if (this.hero && this.hero.heroData) {
-            // Восстанавливаем HP для меню
-            this.hero.heroData.currentStats.hp = this.hero.heroData.baseStats.hp;
+            this.hero.heroData.currentStats.hp = this.hero.hp;
+            this.hero.heroData.level = this.hero.level;
+            this.hero.heroData.exp = this.hero.exp;
             window.GameState.notify();
         }
 
-        // Скрываем все модальные окна
-        document.getElementById('skillChoiceModal').style.display = 'none';
-        document.getElementById('pauseMenu').style.display = 'none';
-        document.getElementById('battleResultModal').style.display = 'none';
-
-        this.pendingSkillChoice = false;
         window.currentArena = null;
     }
 
     initControls() {
+        // Клавиатура
         window.addEventListener('keydown', (e) => {
             if (e.key.startsWith('Arrow') || ['w', 'a', 's', 'd', 'W', 'A', 'S', 'D'].includes(e.key)) {
                 e.preventDefault();
@@ -642,19 +513,21 @@ checkForLevelUp() {
             }
         });
 
+        // Джойстик для мобильных
         const joystickBase = document.querySelector('.joystick-base');
         const joystickThumb = document.getElementById('joystickThumb');
 
         if (joystickBase && joystickThumb) {
             let joystickActive = false;
 
-            joystickBase.addEventListener('touchstart', (e) => {
+            // Добавляем обработчики с опцией passive: false для предотвращения скролла
+            const touchStartHandler = (e) => {
                 e.preventDefault();
                 joystickActive = true;
                 this.joystick.active = true;
-            });
+            };
 
-            joystickBase.addEventListener('touchmove', (e) => {
+            const touchMoveHandler = (e) => {
                 e.preventDefault();
                 if (!joystickActive) return;
 
@@ -678,16 +551,57 @@ checkForLevelUp() {
 
                 this.joystick.dirX = dx / maxRadius;
                 this.joystick.dirY = dy / maxRadius;
-            });
+            };
 
-            joystickBase.addEventListener('touchend', (e) => {
+            const touchEndHandler = (e) => {
                 e.preventDefault();
                 joystickActive = false;
                 this.joystick.active = false;
                 joystickThumb.style.transform = 'translate(0, 0)';
-            });
+            };
+
+            // Добавляем обработчики с опциями
+            joystickBase.addEventListener('touchstart', touchStartHandler, { passive: false });
+            joystickBase.addEventListener('touchmove', touchMoveHandler, { passive: false });
+            joystickBase.addEventListener('touchend', touchEndHandler, { passive: false });
+            joystickBase.addEventListener('touchcancel', touchEndHandler, { passive: false });
         }
     }
+
+    checkSkillChoice() {
+        if (!this.hero || !this.hero.heroData) {
+            return;
+        }
+        
+        // Проверяем напрямую pendingSkillLevel
+        const hasPending = this.hero.heroData.pendingSkillLevel > 0;
+        
+        if (hasPending && !this.skillChoiceShown) {
+            console.log(`%c🆕 ОБНАРУЖЕН НАВЫК! Уровень: ${this.hero.heroData.pendingSkillLevel}`, 'color: #4aff4a; font-size: 12px');
+            this.skillChoiceShown = true;
+            this.pause(); // Ставим игру на паузу
+            
+            // Получаем доступные навыки
+            const skills = window.GameState.skillManager.getRandomSkillsForHero(
+                this.hero.heroData, 
+                this.hero.heroData.pendingSkillLevel
+            );
+            
+            console.log('Доступные навыки:', skills.map(s => s.name));
+            
+            // Показываем модальное окно с выбором
+            setTimeout(() => {
+                if (window.ui) {
+                    console.log('Показываем окно выбора навыка');
+                    window.ui.showSkillChoice(this.hero.heroData, skills);
+                } else {
+                    console.error('❌ UI не найден! window.ui =', window.ui);
+                    this.resume();
+                }
+            }, 500);
+        }
+    }
+
 }
 
 window.SurvivorsArena = SurvivorsArena;

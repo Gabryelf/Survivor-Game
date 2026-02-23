@@ -1,29 +1,41 @@
 class ArenaController {
     constructor() {
         // Создаём менеджер спрайтов
-        window.spriteManager = new SpriteManager();
+        if (!window.spriteManager) {
+            window.spriteManager = new SpriteManager();
+        }
         this.arena = null;
         this.initEventListeners();
     }
     
     initEventListeners() {
-        document.getElementById('pauseBtn').addEventListener('click', () => {
-            if (this.arena) {
-                this.arena.togglePause();
-            }
-        });
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resumeBtn = document.getElementById('resumeBtn');
+        const exitBtn = document.getElementById('exitArenaBtn');
         
-        document.getElementById('resumeBtn').addEventListener('click', () => {
-            if (this.arena) {
-                this.arena.togglePause();
-            }
-        });
+        if (pauseBtn) {
+            pauseBtn.addEventListener('click', () => {
+                if (this.arena) {
+                    this.arena.togglePause();
+                }
+            });
+        }
         
-        document.getElementById('exitArenaBtn').addEventListener('click', () => {
-            if (this.arena) {
-                this.arena.exitArena();
-            }
-        });
+        if (resumeBtn) {
+            resumeBtn.addEventListener('click', () => {
+                if (this.arena) {
+                    this.arena.togglePause();
+                }
+            });
+        }
+        
+        if (exitBtn) {
+            exitBtn.addEventListener('click', () => {
+                if (this.arena) {
+                    this.arena.exitArena();
+                }
+            });
+        }
     }
     
     startExpedition(location, hero) {
@@ -31,6 +43,8 @@ class ArenaController {
             alert('Сначала выберите героя в меню "Герои"!');
             return false;
         }
+        
+        console.log('Starting expedition with hero:', hero);
         
         // Сохраняем текущее состояние героя
         hero.currentStats.hp = hero.baseStats.hp;
@@ -46,8 +60,18 @@ class ArenaController {
         // Скрываем навигацию
         document.querySelector('.game-nav').style.display = 'none';
         
-        // Запускаем арену
-        this.arena.start();
+        // Принудительно скрываем основной хедер
+        const gameHeader = document.querySelector('.game-header');
+        if (gameHeader) {
+            gameHeader.style.display = 'none';
+            gameHeader.style.visibility = 'hidden';
+        }
+        
+        // Даем время на перерисовку DOM
+        setTimeout(() => {
+            // Запускаем арену
+            this.arena.start();
+        }, 100);
         
         return true;
     }

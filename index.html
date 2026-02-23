@@ -71,51 +71,47 @@
                 </div>
             </div>
 
-            <!-- Экран 5: Арена (на весь экран) -->
+            <!-- Экран 5: Арена (Survivors-style) -->
+            <!-- Экран 5: Арена (Survivors-style) -->
             <div class="screen" id="screenArena">
                 <div class="arena-game-container">
-                    <!-- Компактный интерфейс поверх canvas -->
-                    <div class="arena-overlay">
-                        <!-- Верхняя панель -->
-                        <div class="arena-header-compact">
-                            <!-- HP бар -->
-                            <div class="hp-bar-container">
-                                <div class="hp-bar-fill" id="arenaHpBar" style="width: 100%"></div>
-                                <span class="hp-text" id="arenaHpText">100/100</span>
+                    <!-- Верхняя панель с информацией -->
+                    <div class="arena-header">
+                        <div class="arena-stats">
+                            <!-- Прогресс бар здоровья -->
+                            <div class="progress-bar-container">
+                                <div class="progress-bar">
+                                    <div class="progress-bar-fill hp" id="arenaHpBar" style="width: 100%"></div>
+                                    <span class="progress-text" id="arenaHpText">100/100</span>
+                                </div>
                             </div>
-                            
-                            <!-- EXP бар -->
-                            <div class="exp-bar-container">
-                                <div class="exp-bar-fill" id="arenaExpBar" style="width: 0%"></div>
-                                <span class="exp-text" id="arenaExpText">Ур. 1</span>
+
+                            <!-- Прогресс бар опыта -->
+                            <div class="progress-bar-container">
+                                <div class="progress-bar">
+                                    <div class="progress-bar-fill" id="arenaExpBar" style="width: 0%"></div>
+                                    <span class="progress-text" id="arenaExpText">Ур. 1 (0/100)</span>
+                                </div>
                             </div>
-                            
-                            <!-- Таймер и пауза -->
-                            <div class="arena-controls">
-                                <div class="arena-timer" id="arenaTimer">0:00</div>
-                                <button class="arena-pause-btn" id="pauseBtn">⏸️</button>
+
+                            <!-- Навыки -->
+                            <div class="arena-skills">
+                                <div class="skill-slot active">⚔️</div>
+                                <div class="skill-slot">🛡️</div>
+                                <div class="skill-slot">⚡</div>
+                                <div class="skill-slot">❤️</div>
                             </div>
+
+                            <!-- Таймер -->
+                            <div class="stat">⏱️ <span id="arenaTimer">0:00</span></div>
                         </div>
-                        
-                        <!-- Нижняя панель с оружием и навыками -->
-                        <div class="arena-footer">
-                            <div class="weapon-icon" id="arenaWeaponIcon">
-                                <span id="arenaWeaponEmoji">⚔️</span>
-                                <div class="weapon-cooldown" id="arenaWeaponCooldown"></div>
-                            </div>
-                            
-                            <div class="skill-icons" id="arenaSkillIcons">
-                                <!-- Сюда будут добавляться иконки навыков -->
-                                <div class="skill-slot empty">?</div>
-                                <div class="skill-slot empty">?</div>
-                                <div class="skill-slot empty">?</div>
-                            </div>
-                        </div>
+
+                        <button class="pause-btn" id="pauseBtn">⏸️</button>
                     </div>
-                    
-                    <!-- Canvas для игры (на весь экран) -->
+
+                    <!-- Canvas для игры -->
                     <canvas id="gameCanvas"></canvas>
-                    
+
                     <!-- Джойстик для мобильных устройств -->
                     <div class="joystick-container" id="joystickContainer">
                         <div class="joystick-base">
@@ -126,32 +122,8 @@
                     <!-- Пауза/меню выхода -->
                     <div class="pause-menu" id="pauseMenu" style="display: none;">
                         <h3>Пауза</h3>
-                        <div class="pause-stats">
-                            <p>Время: <span id="pauseTime">0:00</span></p>
-                            <p>Убито врагов: <span id="pauseKills">0</span></p>
-                            <p>Получено опыта: <span id="pauseExp">0</span></p>
-                        </div>
                         <button class="resume-btn" id="resumeBtn">Продолжить</button>
                         <button class="exit-arena-btn" id="exitArenaBtn">Выйти с арены</button>
-                    </div>
-
-                    <!-- Экран выбора навыка (появляется при повышении уровня) -->
-                    <div class="skill-choice-modal" id="skillChoiceModal" style="display: none;">
-                        <h2>Новый уровень! Выберите навык</h2>
-                        <div class="skill-choices" id="skillChoices">
-                            <!-- Сюда будут добавляться 3 навыка на выбор -->
-                        </div>
-                    </div>
-
-                    <!-- Экран завершения боя -->
-                    <div class="battle-result-modal" id="battleResultModal" style="display: none;">
-                        <div class="result-content">
-                            <h2 id="resultTitle">Победа!</h2>
-                            <div class="result-rewards" id="resultRewards">
-                                <!-- Награды -->
-                            </div>
-                            <button class="continue-btn" id="continueBtn">Продолжить</button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -177,10 +149,11 @@
     <!-- Core классы  -->
     <script src="js/core/GameState.js"></script>
     <script src="js/core/Item.js"></script>
-    <script src="js/core/Skill.js"></script> 
     <script src="js/core/Hero.js"></script>
     <script src="js/core/Shop.js"></script>
     <script src="js/core/Recipe.js"></script>
+    <script src="js/core/Skill.js"></script>
+
 
     <!-- Классы арены  -->
     <script src="js/arena/GameEntity.js"></script>

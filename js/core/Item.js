@@ -58,7 +58,37 @@ class Material extends Item {
     }
 }
 
+class Accessory extends Item {
+    constructor(id, name, rarity, basePrice, stats, icon = '💍') {
+        super(id, name, 'accessory', rarity, basePrice, icon);
+        this.stats = stats;
+        this.special = stats.special || null;
+        
+        const bonuses = [];
+        if (stats.attack) bonuses.push(`⚔️ +${stats.attack} атаки`);
+        if (stats.defense) bonuses.push(`🛡️ +${stats.defense} защиты`);
+        if (stats.hp) bonuses.push(`❤️ +${stats.hp} здоровья`);
+        if (stats.speed) bonuses.push(`👟 +${stats.speed} скорости`);
+        if (stats.critChance) bonuses.push(`⭐ +${Math.round(stats.critChance*100)}% крит. шанса`);
+        if (stats.critDamage) bonuses.push(`💥 +${Math.round((stats.critDamage-1.5)*100)}% крит. урона`);
+        
+        this.description = bonuses.join(', ');
+    }
+}
+
+// Класс щита
+class Shield extends Item {
+    constructor(id, name, rarity, basePrice, stats, icon = '🛡️') {
+        super(id, name, 'shield', rarity, basePrice, icon);
+        this.stats = stats;
+        this.blockChance = stats.blockChance || 0;
+        this.description = `Защита: +${stats.defense || 0}, Блок: ${Math.round((stats.blockChance || 0)*100)}%`;
+    }
+}
+
 // Делаем глобальными
+window.Accessory = Accessory;
+window.Shield = Shield;
 window.Item = Item;
 window.Weapon = Weapon;
 window.Armor = Armor;

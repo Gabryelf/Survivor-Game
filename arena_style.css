@@ -1,455 +1,143 @@
-/* ==============================
-   Глобальные стили и сброс
-   ============================== */
-   * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Arial', sans-serif;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-}
-
-body {
-    height: 100vh;
-    width: 100vw;
-    overflow: hidden;
-    background-color: #050505;
-    color: white;
-}
-
-/* ==============================
-   Основной контейнер игры
-   ============================== */
-.game-container {
-    height: 100vh;
-    width: 100vw;
+/* Стили для арены */
+.arena-game-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
+    background-color: #000;
     overflow: hidden;
 }
 
-/* ==============================
-   Шапка с ресурсами (ТОЛЬКО В МЕНЮ)
-   ============================== */
-.game-header {
-    background-color: #000000;
+/* Верхняя панель с информацией */
+.arena-header {
+    background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1f 100%);
     padding: 10px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 2px solid #e94560;
     flex-shrink: 0;
-    z-index: 100;
+    z-index: 10;
 }
 
-.resources {
+/* Статистика на арене */
+.arena-stats {
     display: flex;
     gap: 20px;
     flex-wrap: wrap;
+    align-items: center;
+    flex: 1;
 }
 
-.resource-item {
-    background: #0f3460;
+.arena-stats .stat {
+    background: #16213e;
     padding: 5px 15px;
     border-radius: 20px;
     font-size: 1rem;
     display: flex;
     align-items: center;
     gap: 5px;
-    border: 1px solid #e94560;
 }
 
-.header-right {
-    color: #e94560;
-    font-weight: bold;
+/* Прогресс бары */
+.progress-bar-container {
+    background: #16213e;
+    padding: 5px 15px;
+    border-radius: 20px;
+    min-width: 200px;
 }
 
-/* ==============================
-   Основной экран (меню)
-   ============================== */
-.game-screen {
-    flex: 1;
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background-color: #2a2a4a;
+    border-radius: 10px;
     overflow: hidden;
-    background-color: #0a0a1a;
     position: relative;
 }
 
-.screen {
-    display: none;
+.progress-bar-fill {
     height: 100%;
-    width: 100%;
-    overflow-y: auto;
-    padding: 20px;
-    background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
+    background: linear-gradient(90deg, #4aff4a, #00aa00);
+    border-radius: 10px;
+    transition: width 0.3s ease;
 }
 
-.screen.active {
-    display: block;
+.progress-bar-fill.hp {
+    background: linear-gradient(90deg, #ff4a4a, #aa0000);
 }
 
-/* Сетки для карточек */
-.locations-grid, .heroes-list, .shop-grid, .craft-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
-    padding: 10px 0;
-}
-
-/* Карточки */
-.location-card, .hero-card, .shop-item, .craft-item {
-    background: rgba(15, 52, 96, 0.8);
-    backdrop-filter: blur(5px);
-    border: 1px solid #e94560;
-    border-radius: 15px;
-    padding: 20px;
-    text-align: center;
-    transition: transform 0.3s, box-shadow 0.3s;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-}
-
-.location-card:hover, .hero-card:hover, .shop-item:hover, .craft-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(233, 69, 96, 0.3);
-}
-
-/* Кнопки */
-button {
-    background: #e94560;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 1rem;
-    margin-top: 10px;
-    width: 100%;
-    font-weight: bold;
-    transition: background 0.3s, transform 0.2s;
-}
-
-button:hover:not(:disabled) {
-    background: #ff6b8b;
-    transform: scale(1.02);
-}
-
-button:disabled {
-    background: #444;
-    cursor: not-allowed;
-    opacity: 0.5;
-}
-
-/* Нижняя навигация */
-.game-nav {
-    display: flex;
-    justify-content: space-around;
-    background-color: #000000;
-    padding: 10px;
-    border-top: 2px solid #e94560;
-    flex-shrink: 0;
-}
-
-.nav-btn {
-    background: transparent;
-    border: none;
-    color: #a0a0a0;
-    font-size: 1.2rem;
-    padding: 10px;
-    width: auto;
-    transition: color 0.3s;
-}
-
-.nav-btn.active {
-    color: #e94560;
-    border-bottom: 2px solid #e94560;
-}
-
-/* Модальное окно */
-.modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
-    z-index: 1000;
-    backdrop-filter: blur(5px);
-}
-
-.modal-content {
-    background-color: #16213e;
-    margin: 5% auto;
-    padding: 20px;
-    width: 90%;
-    max-width: 600px;
-    border-radius: 15px;
-    max-height: 80vh;
-    overflow-y: auto;
-    border: 2px solid #e94560;
-}
-
-.close-modal {
-    float: right;
-    font-size: 28px;
-    cursor: pointer;
-    color: #e94560;
-}
-
-.close-modal:hover {
-    color: #ff6b8b;
-}
-
-/* ==============================
-   АРЕНА - ПОЛНОЭКРАННЫЙ РЕЖИМ
-   ============================== */
-.arena-game-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    background: #000;
-    overflow: hidden;
-}
-
-/* Canvas на весь экран */
-#gameCanvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: block;
-    touch-action: none;
-    z-index: 1;
-}
-
-/* Оверлей поверх canvas (интерфейс) */
-.arena-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 10;
-    pointer-events: none; /* Позволяет кликать сквозь интерфейс на canvas */
-}
-
-/* Верхняя панель - очень компактная */
-.arena-header-compact {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    right: 10px;
-    display: flex;
-    gap: 8px;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
-    padding: 8px 12px;
-    border-radius: 40px;
-    border: 1px solid rgba(233, 69, 96, 0.5);
-    pointer-events: auto; /* Сама панель кликабельна */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-}
-
-/* Контейнер для HP бара */
-.hp-bar-container {
-    position: relative;
-    flex: 2;
-    height: 36px;
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 18px;
-    overflow: hidden;
-    border: 1px solid #e94560;
-    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
-}
-
-.hp-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #e94560, #ff6b8b);
-    transition: width 0.2s;
-    box-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
-}
-
-/* Контейнер для EXP бара */
-.exp-bar-container {
-    position: relative;
-    flex: 2;
-    height: 36px;
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 18px;
-    overflow: hidden;
-    border: 1px solid #4aff4a;
-    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
-}
-
-.exp-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #4aff4a, #7aff7a);
-    transition: width 0.2s;
-    box-shadow: 0 0 10px rgba(74, 255, 74, 0.5);
-}
-
-/* Текст на барах */
-.hp-text, .exp-text {
+.progress-text {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     color: white;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: bold;
     text-shadow: 1px 1px 2px black;
-    z-index: 2;
-    white-space: nowrap;
-    letter-spacing: 0.5px;
 }
 
-/* Правая панель управления */
-.arena-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(15, 52, 96, 0.6);
-    border-radius: 30px;
-    padding: 2px 8px;
-    border: 1px solid #e94560;
-}
-
-.arena-timer {
-    font-size: 22px;
-    font-weight: bold;
-    color: #e94560;
-    text-shadow: 0 0 15px rgba(233, 69, 96, 0.7);
-    min-width: 70px;
-    text-align: center;
-    font-family: 'Courier New', monospace;
-}
-
-.arena-pause-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 18px;
-    background: rgba(233, 69, 96, 0.3);
-    border: 1px solid #e94560;
+/* Кнопка паузы */
+.pause-btn {
+    background: #e94560;
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    color: white;
+    font-size: 20px;
     cursor: pointer;
-    margin: 0;
-    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
 }
 
-.arena-pause-btn:hover {
-    background: rgba(233, 69, 96, 0.8);
+.pause-btn:hover {
+    background: #ff6b8b;
     transform: scale(1.1);
 }
 
-/* Нижняя панель с оружием и навыками */
-.arena-footer {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    right: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    pointer-events: auto;
-}
-
-/* Иконка оружия */
-.weapon-icon {
-    position: relative;
-    width: 70px;
-    height: 70px;
-    background: rgba(15, 52, 96, 0.9);
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 40px;
-    border: 2px solid #e94560;
-    backdrop-filter: blur(5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-    transition: transform 0.2s;
-}
-
-.weapon-icon:hover {
-    transform: scale(1.05);
-}
-
-.weapon-cooldown {
-    position: absolute;
-    bottom: 0;
-    left: 0;
+/* Canvas для игры - занимает все доступное пространство */
+#gameCanvas {
+    display: block;
     width: 100%;
-    height: 0%;
-    background: rgba(0, 0, 0, 0.7);
-    transition: height 0.1s;
-    border-radius: 18px;
-    pointer-events: none;
+    flex: 1;
+    background: #000;
+    object-fit: cover; /* Растягивается на всю доступную область */
 }
 
-/* Иконки навыков */
-.skill-icons {
-    display: flex;
-    gap: 10px;
-}
-
-.skill-slot {
-    width: 55px;
-    height: 55px;
-    background: rgba(15, 52, 96, 0.9);
-    border-radius: 15px;
-    border: 2px solid #4a4a8a;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    cursor: pointer;
-    transition: all 0.2s;
-    backdrop-filter: blur(5px);
-    color: white;
-    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.5);
-}
-
-.skill-slot:hover {
-    transform: scale(1.1);
-    border-color: #e94560;
-    background: rgba(233, 69, 96, 0.3);
-}
-
-.skill-slot.empty {
-    opacity: 0.5;
-    font-size: 24px;
-    border-color: #666;
-}
-
-/* Джойстик для мобильных */
+/* Джойстик для мобильных устройств - по умолчанию скрыт */
 .joystick-container {
+    display: none;
     position: absolute;
     bottom: 30px;
     left: 30px;
     width: 120px;
     height: 120px;
     z-index: 20;
-    display: none;
-    pointer-events: auto;
+}
+
+/* Показываем джойстик только на мобильных устройствах и планшетах */
+@media (max-width: 1024px) and (pointer: coarse) {
+    .joystick-container {
+        display: block;
+    }
 }
 
 .joystick-base {
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(255, 255, 255, 0.2);
     border-radius: 50%;
     display: flex;
-    justify-content: center;
     align-items: center;
-    backdrop-filter: blur(8px);
-    border: 2px solid rgba(233, 69, 96, 0.5);
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    backdrop-filter: blur(5px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 .joystick-thumb {
@@ -457,27 +145,22 @@ button:disabled {
     height: 50px;
     background: rgba(233, 69, 96, 0.8);
     border-radius: 50%;
-    cursor: pointer;
-    transition: transform 0.1s;
-    border: 2px solid white;
-    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+    transition: transform 0.1s ease;
 }
 
-/* Модальное окно паузы */
+/* Меню паузы */
 .pause-menu {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: #16213e;
+    background: rgba(0, 0, 0, 0.95);
     padding: 30px;
-    border-radius: 20px;
+    border-radius: 15px;
     text-align: center;
-    z-index: 100;
-    border: 3px solid #e94560;
+    z-index: 30;
+    border: 2px solid #e94560;
     min-width: 300px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-    pointer-events: auto;
 }
 
 .pause-menu h3 {
@@ -486,225 +169,88 @@ button:disabled {
     font-size: 24px;
 }
 
-.pause-stats {
-    background: #0f3460;
-    padding: 15px;
-    border-radius: 10px;
-    margin: 20px 0;
-    text-align: left;
-}
-
-.pause-stats p {
-    margin: 8px 0;
-    font-size: 16px;
-    color: #fff;
-}
-
 .pause-menu button {
-    margin: 10px 5px;
-    min-width: 120px;
-}
-
-/* Модальное окно выбора навыка */
-.skill-choice-modal {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #16213e;
-    padding: 30px;
-    border-radius: 20px;
-    border: 3px solid #e94560;
-    z-index: 200;
-    min-width: 500px;
-    max-width: 90%;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-    pointer-events: auto;
-}
-
-.skill-choice-modal h2 {
-    color: #e94560;
-    text-align: center;
-    margin-bottom: 20px;
-    font-size: 28px;
-}
-
-.skill-choices {
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-}
-
-.skill-choice-card {
-    background: #0f3460;
-    padding: 20px;
-    border-radius: 15px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s;
-    flex: 1;
-    border: 2px solid transparent;
-}
-
-.skill-choice-card:hover {
-    transform: scale(1.05);
-    background: #1a4a8a;
-    border-color: #e94560;
-}
-
-.skill-choice-icon {
-    font-size: 48px;
-    margin-bottom: 10px;
-}
-
-.skill-choice-name {
-    font-size: 20px;
-    font-weight: bold;
-    color: #e94560;
-    margin-bottom: 10px;
-}
-
-.skill-choice-desc {
-    font-size: 14px;
-    color: #aaa;
-}
-
-/* Модальное окно результатов боя */
-.battle-result-modal {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #16213e;
-    padding: 30px;
-    border-radius: 20px;
-    border: 3px solid #e94560;
-    z-index: 200;
-    min-width: 400px;
-    text-align: center;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-    pointer-events: auto;
-}
-
-.result-content h2 {
-    font-size: 36px;
-    margin-bottom: 20px;
-}
-
-.result-content h2.victory {
-    color: #4aff4a;
-    text-shadow: 0 0 15px rgba(74, 255, 74, 0.5);
-}
-
-.result-content h2.defeat {
-    color: #e94560;
-    text-shadow: 0 0 15px rgba(233, 69, 96, 0.5);
-}
-
-.result-rewards {
-    background: #0f3460;
-    padding: 20px;
-    border-radius: 15px;
-    margin: 20px 0;
-    text-align: left;
-}
-
-.reward-item {
-    display: flex;
-    justify-content: space-between;
+    width: 100%;
     margin: 10px 0;
-    font-size: 18px;
-    padding: 5px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
-.continue-btn {
+.resume-btn {
+    background: #4aff4a;
+    color: #000;
+}
+
+.resume-btn:hover {
+    background: #6aff6a;
+}
+
+.exit-arena-btn {
     background: #e94560;
     color: white;
-    border: none;
-    padding: 15px 30px;
-    border-radius: 10px;
-    font-size: 20px;
-    cursor: pointer;
-    width: 100%;
-    font-weight: bold;
-    margin-top: 20px;
 }
 
-.continue-btn:hover {
+.exit-arena-btn:hover {
     background: #ff6b8b;
 }
 
-/* ==============================
-   МЕДИА-ЗАПРОСЫ ДЛЯ МОБИЛЬНЫХ
-   ============================== */
+/* Навыки на арене */
+.arena-skills {
+    display: flex;
+    gap: 10px;
+}
+
+.skill-slot {
+    background: #16213e;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    position: relative;
+    border: 1px solid #0f3460;
+}
+
+.skill-slot.active {
+    border-color: #e94560;
+    box-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+}
+
+.skill-cooldown {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    background: #e94560;
+    color: white;
+    font-size: 10px;
+    padding: 2px 4px;
+    border-radius: 10px;
+    min-width: 16px;
+    text-align: center;
+}
+
+/* Адаптация для мобильных устройств */
 @media (max-width: 768px) {
-    /* Шапка меню */
-    .game-header {
-        padding: 5px 10px;
+    .arena-stats {
+        gap: 10px;
     }
     
-    .resources {
-        gap: 8px;
+    .progress-bar-container {
+        min-width: 150px;
     }
     
-    .resource-item {
+    .arena-stats .stat {
         padding: 3px 10px;
         font-size: 0.9rem;
     }
     
-    /* Навигация */
-    .nav-btn {
-        font-size: 1rem;
-        padding: 8px 5px;
-    }
-    
-    /* Карточки */
-    .locations-grid, .heroes-list, .shop-grid, .craft-grid {
-        grid-template-columns: 1fr;
-        gap: 15px;
-    }
-    
-    /* Интерфейс арены */
-    .arena-header-compact {
-        padding: 5px 10px;
-        gap: 5px;
-    }
-    
-    .hp-bar-container, .exp-bar-container {
-        height: 30px;
-    }
-    
-    .hp-text, .exp-text {
-        font-size: 11px;
-    }
-    
-    .arena-timer {
-        font-size: 18px;
-        min-width: 60px;
-    }
-    
-    .arena-pause-btn {
-        width: 28px;
-        height: 28px;
-        font-size: 16px;
-    }
-    
-    .weapon-icon {
-        width: 60px;
-        height: 60px;
-        font-size: 32px;
-    }
-    
-    .skill-slot {
-        width: 45px;
-        height: 45px;
-        font-size: 22px;
-    }
-    
-    /* Джойстик виден только на мобильных */
     .joystick-container {
-        display: block;
         width: 100px;
         height: 100px;
         bottom: 20px;
@@ -714,70 +260,5 @@ button:disabled {
     .joystick-thumb {
         width: 40px;
         height: 40px;
-    }
-    
-    /* Модальные окна */
-    .skill-choice-modal {
-        min-width: 90%;
-        padding: 20px;
-    }
-    
-    .skill-choices {
-        flex-direction: column;
-        gap: 15px;
-    }
-    
-    .battle-result-modal {
-        min-width: 90%;
-        padding: 20px;
-    }
-    
-    .pause-menu {
-        min-width: 90%;
-        padding: 20px;
-    }
-}
-
-/* ==============================
-   АНИМАЦИИ
-   ============================== */
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
-}
-
-@keyframes hit {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2); background-color: #ff0000; }
-    100% { transform: scale(1); }
-}
-
-@keyframes heal {
-    0% { filter: brightness(1); }
-    50% { filter: brightness(1.5); background-color: #00ff00; }
-    100% { filter: brightness(1); }
-}
-
-.shake {
-    animation: shake 0.3s ease-in-out;
-}
-
-.hit {
-    animation: hit 0.3s ease-in-out;
-}
-
-.heal {
-    animation: heal 0.3s ease-in-out;
-}
-
-@keyframes floatUp {
-    0% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    100% {
-        opacity: 0;
-        transform: translateY(-50px);
     }
 }

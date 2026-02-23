@@ -174,3 +174,16 @@ button:hover {
         padding: 10px;
     }
 }
+
+
+/* Принудительное скрытие хедера на арене */
+.screen#screenArena.active ~ .game-header,
+.screen#screenArena.active + .game-header,
+.screen#screenArena.active .game-header {
+    display: none !important;
+}
+
+/* Убеждаемся что аренный хедер виден */
+.screen#screenArena .arena-header {
+    display: flex !important;
+}
