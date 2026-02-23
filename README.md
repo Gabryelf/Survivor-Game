@@ -225,6 +225,18 @@ getSprite(key) {
     
     return this.sprites.get(key) || this.sprites.get('default_hero') || this.createFallbackOnDemand(key);
 }
+
+ adjustColor(hex, percent) {
+        let R = parseInt(hex.substring(1,3),16);
+        let G = parseInt(hex.substring(3,5),16);
+        let B = parseInt(hex.substring(5,7),16);
+        
+        R = Math.min(255, Math.max(0, R + percent));
+        G = Math.min(255, Math.max(0, G + percent));
+        B = Math.min(255, Math.max(0, B + percent));
+        
+        return '#' + ((1 << 24) + (R << 16) + (G << 8) + B).toString(16).slice(1);
+    }
 ```
 
 **Что изменилось:**
