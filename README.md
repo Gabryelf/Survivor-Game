@@ -518,6 +518,24 @@ renderHeroes() {
     // Добавляем обработчики после создания всех карточек
     this.addHeroEventListeners();
 }
+
+// Добавьте где-нибудь после renderHeroes()
+addHeroEventListeners() {
+    document.querySelectorAll('.select-hero-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const heroId = e.target.dataset.heroId;
+            window.GameState.selectHero(heroId);
+            this.renderHeroes();
+        });
+    });
+
+    document.querySelectorAll('.inventory-hero-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const heroId = e.target.dataset.heroId;
+            this.showHeroInventory(heroId);
+        });
+    });
+}
 ```
 
 #### 3.3 Замените метод `showSkillChoice()` полностью:
