@@ -340,6 +340,14 @@ function showLoadingIndicator(text) {
     document.body.appendChild(loader);
 }
 
+function hideLoadingIndicator() {
+    const loader = document.getElementById('loadingIndicator');
+    if (loader) {
+        loader.style.opacity = '0';
+        setTimeout(() => loader.remove(), 500);
+    }
+}
+
 function showNotification(text, duration) {
     const notif = document.createElement('div');
     notif.style.cssText = `
@@ -358,6 +366,69 @@ function showNotification(text, duration) {
     document.body.appendChild(notif);
     setTimeout(() => notif.remove(), duration);
 }
+```
+
+#### Проверяем инициализацию и обработчики  
+```javascript
+function initializeGame() {
+    console.log('🎮 Инициализация игры...');
+    
+    // Создаем героев
+    const warrior = new window.Hero('1', 'Воин', { hp: 120, attack: 18, defense: 12, speed: 8 }, 'warrior');
+    const archer = new window.Hero('2', 'Лучник', { hp: 80, attack: 22, defense: 6, speed: 15 }, 'archer');
+    const mage = new window.Hero('3', 'Маг', { hp: 70, attack: 25, defense: 4, speed: 12 }, 'mage');
+    const rogue = new window.Hero('4', 'Разбойник', { hp: 90, attack: 16, defense: 8, speed: 18 }, 'rogue');
+    
+    // Добавляем в состояние
+    window.GameState.heroes.push(warrior, archer, mage, rogue);
+    window.GameState.selectHero('1');
+    
+    // Добавляем тестовые предметы
+    window.GameState.addToInventory(new window.Weapon('weapon_sword_1', 'Деревянный меч', 'common', 10, { damage: 5, range: 1 }, '⚔️'));
+    window.GameState.addToInventory(new window.Weapon('weapon_bow_1', 'Короткий лук', 'common', 15, { damage: 7, range: 3 }, '🏹'));
+    window.GameState.addToInventory(new window.Armor('armor_cloth_1', 'Тканевая броня', 'common', 8, { defense: 3, hp: 5 }, '👕'));
+    
+    // Инициализируем системы
+    window.GameState.initShop();
+    window.GameState.initRecipes();
+    window.GameState.initSkills();
+    
+    // Запускаем UI
+    window.ui = new window.UIManager();
+    
+    // Создаем контроллер арены
+    window.arenaController = new window.ArenaController();
+    
+    console.log('✅ Игра готова!');
+}
+
+// Обработчики кнопок локаций
+document.querySelectorAll('.start-match-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const location = e.target.closest('.location-card').dataset.location;
+        const costType = e.target.dataset.costType;
+        
+        const hero = window.GameState.getCurrentHero();
+        
+        if (!hero) {
+            showNotification('❌ Сначала выберите героя!', 2000);
+            return;
+        }
+        
+        if (window.GameState.resources[costType] < 1) {
+            showNotification(`❌ Не хватает ${costType}!`, 2000);
+            return;
+        }
+        
+        window.GameState.updateResource(costType, -1);
+        
+        const started = window.arenaController.startExpedition(location, hero);
+        
+        if (!started) {
+            window.GameState.updateResource(costType, 1);
+        }
+    });
+});
 ```
 
 #### Добавлен новый герой
