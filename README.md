@@ -461,23 +461,57 @@ getHeroAvatarUrl(hero) {
 #### Обновлённый renderHeroes() с аватарками
 ```javascript
 renderHeroes() {
-    container.innerHTML = '';
-    
-    window.GameState.heroes.forEach(hero => {
-        const avatarUrl = this.getHeroAvatarUrl(hero);
-        
-        heroCard.innerHTML = `
-            <div class="hero-avatar">
-                <img src="${avatarUrl}" 
-                     alt="${hero.name}" 
-                     style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid #e94560;"
-                     onerror="this.onerror=null; this.src='images/default_hero.png';">
-            </div>
-            <h3>${hero.name} (Ур. ${hero.level})</h3>
-            <!-- остальное -->
-        `;
-    });
-}
+        const container = document.getElementById('heroesList');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        window.GameState.heroes.forEach(hero => {
+            const heroCard = document.createElement('div');
+            heroCard.className = 'hero-card';
+            if (hero.id === window.GameState.currentHeroId) {
+                heroCard.style.border = '2px solid #e94560';
+            }
+
+            // Получаем URL аватара
+            const avatarUrl = this.getHeroAvatarUrl(hero);
+
+            heroCard.innerHTML = `
+                <div class="hero-avatar" style="position: relative;">
+                    <img src="${avatarUrl}" 
+                         alt="${hero.name}" 
+                         style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid #e94560; background: #16213e; object-fit: cover;"
+                         onerror="this.onerror=null; this.src='images/default_hero.png';">
+                </div>
+                <h3>${hero.name} (Ур. ${hero.level})</h3>
+                <div class="hero-stats">
+                    <p>❤️ HP: ${hero.currentStats.hp}</p>
+                    <p>⚔️ Атака: ${hero.currentStats.attack}</p>
+                    <p>🛡️ Защита: ${hero.currentStats.defense}</p>
+                </div>
+                <div class="hero-exp">
+                    <progress value="${hero.exp}" max="${hero.expToNextLevel}"></progress>
+                    <p>${hero.exp}/${hero.expToNextLevel} опыта</p>
+                </div>
+                <div class="hero-skills">
+                    <p>🎯 Уровень: ${hero.level}</p>
+                    <div class="learned-skills" style="display: flex; gap: 5px; margin-top: 5px; justify-content: center;">
+                        ${hero.learnedSkills.map(skillId => {
+                            const skill = window.GameState.skillManager?.skills.find(s => s.id === skillId);
+                            return skill ? `<span title="${skill.name}" style="font-size: 1.5rem;">${skill.icon}</span>` : '';
+                        }).join('')}
+                    </div>
+                </div>
+                <button class="select-hero-btn" data-hero-id="${hero.id}">Выбрать для боя</button>
+                <button class="inventory-hero-btn" data-hero-id="${hero.id}">Инвентарь</button>
+            `;
+
+            container.appendChild(heroCard);
+        });
+
+        // Добавляем обработчики после создания всех карточек
+        this.addHeroEventListeners();
+    }
 ```
 
 **Что изменилось:**
