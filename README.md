@@ -1,7 +1,7 @@
-[![Итерация 1 - Готова](https://img.shields.io/badge/Итерация_5-Арена_и_Враги-5e3830?style=for-the-badge)](##-итерация-1-скелет-и-навигация)
+[![Итерация 5 - Готова](https://img.shields.io/badge/Итерация_5-Арена_и_Враги-5e3830?style=for-the-badge)](##-итерация-1-скелет-и-навигация)
 
 > [!NOTE]
-> Обновлено 20.02.2026
+> Обновлено 25.02.2026
 
 <br>
 
@@ -1472,6 +1472,43 @@ window.ArenaController = ArenaController;
 ---
 
 ## 📝 Шаг 6. Обновляем `index.html`
+
+Добавим новый экран для отображения arena canvas и ui элементов арены
+
+```html
+<!-- Экран 5: Арена (Survivors-style) -->
+            <div class="screen" id="screenArena">
+                <div class="arena-game-container">
+                    <!-- Верхняя панель с информацией -->
+                    <div class="arena-header">
+                        <div class="arena-stats">
+                            <div class="stat">❤️ <span id="arenaHp">100</span>/<span id="arenaMaxHp">100</span></div>
+                            <div class="stat">⚔️ <span id="arenaAttack">15</span></div>
+                            <div class="stat">⏱️ <span id="arenaTimer">0:00</span></div>
+                            <div class="stat">🎯 Ур. <span id="arenaLevel">1</span></div>
+                        </div>
+                        <button class="pause-btn" id="pauseBtn">⏸️</button>
+                    </div>
+
+                    <!-- Canvas для игры -->
+                    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+                    <!-- Джойстик для мобильных устройств -->
+                    <div class="joystick-container" id="joystickContainer">
+                        <div class="joystick-base">
+                            <div class="joystick-thumb" id="joystickThumb"></div>
+                        </div>
+                    </div>
+
+                    <!-- Пауза/меню выхода -->
+                    <div class="pause-menu" id="pauseMenu" style="display: none;">
+                        <h3>Пауза</h3>
+                        <button class="resume-btn" id="resumeBtn">Продолжить</button>
+                        <button class="exit-arena-btn" id="exitArenaBtn">Выйти с арены</button>
+                    </div>
+                </div>
+            </div>
+```
 
 В самом конце файла, в блоке подключения скриптов, добавьте новые строки для файлов арены:
 
