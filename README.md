@@ -483,18 +483,24 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 ```
-Вернитесь в Hero.js и исправте переменную skills в конструкторе
+Вернитесь в Hero.js и исправте переменную skills в конструкторе и добавте 
+методы для новой обработки инвенторя, конечный вариант скрипта должен выглядеть так.
+Теперь у нас есть метод определяющий куда и какую вещь поставить, сами ячейки героя по типу и
+методы ответственные за событие одеть / снять.
 
 ```javascript
+// ==============================
+// Класс героя в игре.
+// ==============================
 class Hero {
     constructor(id, name, baseStats, type) {
         this.id = id;
         this.name = name;
-        this.type = type; // 'warrior', 'archer', 'mage' и т.д.
+        this.type = type; // 'warrior', 'archer', 'mage', 'rogue'
         this.level = 1;
         this.exp = 0;
-        this.expToNextLevel = 100; // Опыта до следующего уровня
-        this.isUnlocked = true; // По умолчанию разблокирован (первый герой)
+        this.expToNextLevel = 100;
+        this.isUnlocked = true;
         
         // Базовые характеристики
         this.baseStats = {
@@ -504,24 +510,260 @@ class Hero {
             speed: baseStats.speed || 10
         };
         
+        // Максимальное здоровье (для удобства)
+        this.maxHp = this.baseStats.hp;
+        
+        // Текущие характеристики (с учетом снаряжения и навыков)
         this.currentStats = { ...this.baseStats };
         
-        this.inventory = new Array(9).fill(null);
+        // Инвентарь общий для всех героев (хранится в GameState)
+        // Каждый герой имеет только ссылки на ID предметов
         
-        this.learnedSkills = []; // ← ТУТ: было this.skills, теперь this.learnedSkills
+        // Снаряжение (зависит от класса)
+        this.equipment = this.initEquipmentSlots();
         
-        // Доступные очки навыков (каждые 3 уровня)
-        this.skillPoints = 0;
+        // Навыки
+        this.learnedSkills = [];
+        this.skillPoints = 0; // Очки навыков (получаются каждые 3 уровня)
+        this.pendingSkillLevel = 0; // Уровень, на котором нужно выбрать навык
         
-        // Снаряжение (оружие, броня и т.д.)
-        this.equipment = {
-            weapon: null,
-            armor: null,
-            accessory: null
-        };
+        // Боевые характеристики
+        this.critChance = 0;
+        this.critDamage = 1.5;
+        this.lifesteal = 0;
+        this.specialEffects = [];
     }
     
+    initEquipmentSlots() {
+        // Создаем слоты в зависимости от класса
+        switch(this.type) {
+            case 'warrior':
+                return {
+                    weapon1: null,  // Оружие 1
+                    weapon2: null,  // Оружие 2 или щит
+                    armor: null,    // Броня
+                    accessory: null // Аксессуар
+                };
+            case 'archer':
+                return {
+                    weapon1: null,  // Лук
+                    armor: null,    // Броня
+                    accessory1: null, // Аксессуар 1
+                    accessory2: null  // Аксессуар 2
+                };
+            case 'mage':
+                return {
+                    weapon1: null,  // Посох
+                    accessory1: null, // Аксессуар 1
+                    accessory2: null, // Аксессуар 2
+                    accessory3: null  // Аксессуар 3
+                };
+            case 'rogue':
+                return {
+                    weapon1: null,  // Кинжал 1
+                    weapon2: null,  // Кинжал 2
+                    accessory1: null, // Аксессуар 1
+                    accessory2: null  // Аксессуар 2
+                };
+            default:
+                return {
+                    weapon1: null,
+                    armor: null,
+                    accessory: null
+                };
+        }
+    }
+    
+    // Добавить опыт
+    addExp(amount) {
+        this.exp += amount;
+        console.log(`Герой ${this.name} получил ${amount} опыта. Всего: ${this.exp}/${this.expToNextLevel}`);
+        
+        let leveledUp = false;
+        
+        // Проверяем, хватает ли опыта для повышения уровня
+        while (this.exp >= this.expToNextLevel) {
+            this.levelUp();
+            leveledUp = true;
+        }
+        
+        return leveledUp;
+    }
+    
+    // Повышение уровня
+    levelUp() {
+        this.level++;
+        this.exp -= this.expToNextLevel;
+        this.expToNextLevel = Math.floor(this.expToNextLevel * 1.5);
+        
+        // Улучшаем характеристики
+        this.baseStats.hp += 10;
+        this.maxHp = this.baseStats.hp;
+        this.baseStats.attack += 2;
+        this.baseStats.defense += 1;
+        
+        // Каждые 3 уровня даем возможность выбрать навык
+        if (this.level % 3 === 0) {
+            this.pendingSkillLevel = this.level;
+            console.log(`%c✨✨✨ ГЕРОЙ ${this.name} ДОСТИГ УРОВНЯ ${this.level} - МОЖЕТ ВЫБРАТЬ НАВЫК! ✨✨✨`, 'color: #e94560; font-size: 14px; font-weight: bold');
+            console.log(`pendingSkillLevel установлен в: ${this.pendingSkillLevel}`);
+            
+            // Добавляем очко навыков
+            this.skillPoints = (this.skillPoints || 0) + 1;
+        } else {
+            console.log(`Герой ${this.name} достиг уровня ${this.level}`);
+        }
+        
+        // Обновляем текущие статы
+        this.updateCurrentStats();
+    }
+    
+    // Проверить, нужно ли выбрать навык
+    hasPendingSkill() {
+        const hasPending = this.pendingSkillLevel > 0;
+        if (hasPending) {
+            console.log(`hasPendingSkill() = true (pendingLevel: ${this.pendingSkillLevel})`);
+        }
+        return hasPending;
+    }
+    
+    // Обновить текущие статы с учетом снаряжения и навыков
+    updateCurrentStats() {
+        this.currentStats = { ...this.baseStats };
+        
+        // Добавляем бонусы от снаряжения
+        const allEquipment = Object.values(this.equipment).filter(item => item !== null);
+        
+        allEquipment.forEach(item => {
+            if (item.stats) {
+                if (item.stats.attack) this.currentStats.attack += item.stats.attack;
+                if (item.stats.defense) this.currentStats.defense += item.stats.defense;
+                if (item.stats.hp) {
+                    this.currentStats.hp += item.stats.hp;
+                    this.maxHp += item.stats.hp;
+                }
+                if (item.stats.speed) this.currentStats.speed += item.stats.speed;
+            }
+            
+            // Особые эффекты предметов
+            if (item.special) {
+                if (item.special.critChance) this.critChance += item.special.critChance;
+                if (item.special.critDamage) this.critDamage += item.special.critDamage;
+                if (item.special.lifesteal) this.lifesteal += item.special.lifesteal;
+            }
+        });
+        
+        // Убеждаемся, что текущее HP не превышает максимум
+        if (this.currentStats.hp > this.maxHp) {
+            this.currentStats.hp = this.maxHp;
+        }
+    }
+    
+    // Экипировать предмет
+    equip(item, slot) {
+        // Проверяем, подходит ли предмет для этого слота
+        const validSlots = this.getValidSlotsForItem(item);
+        
+        if (!validSlots.includes(slot)) {
+            console.log('Предмет нельзя экипировать в этот слот');
+            return false;
+        }
+        
+        // Если в слоте уже есть предмет, возвращаем его в инвентарь
+        if (this.equipment[slot]) {
+            window.GameState.addToInventory(this.equipment[slot]);
+        }
+        
+        // Экипируем новый предмет
+        this.equipment[slot] = item;
+        
+        // Удаляем предмет из инвентаря (по instanceId)
+        window.GameState.removeFromInventory(item.instanceId || item.id);
+        
+        this.updateCurrentStats();
+        return true;
+    }
+    
+    // Снять предмет
+    unequip(slot) {
+        const item = this.equipment[slot];
+        if (!item) return false;
+        
+        // Добавляем в инвентарь
+        window.GameState.addToInventory(item);
+        
+        // Очищаем слот
+        this.equipment[slot] = null;
+        
+        this.updateCurrentStats();
+        return true;
+    }
+    
+    // Получить допустимые слоты для предмета
+    getValidSlotsForItem(item) {
+        const slots = [];
+        
+        switch(item.type) {
+            case 'weapon':
+                if (this.type === 'warrior') {
+                    slots.push('weapon1', 'weapon2');
+                } else if (this.type === 'rogue') {
+                    slots.push('weapon1', 'weapon2');
+                } else {
+                    slots.push('weapon1');
+                }
+                break;
+            case 'shield':
+                if (this.type === 'warrior') {
+                    slots.push('weapon2'); // Щит можно поставить во второй слот оружия
+                }
+                break;
+            case 'armor':
+                if (['warrior', 'archer'].includes(this.type)) {
+                    slots.push('armor');
+                }
+                break;
+            case 'accessory':
+                if (this.type === 'warrior') {
+                    slots.push('accessory');
+                } else if (this.type === 'archer') {
+                    slots.push('accessory1', 'accessory2');
+                } else if (this.type === 'mage') {
+                    slots.push('accessory1', 'accessory2', 'accessory3');
+                } else if (this.type === 'rogue') {
+                    slots.push('accessory1', 'accessory2');
+                }
+                break;
+        }
+        
+        return slots;
+    }
+    
+    // Получить все экипированные предметы
+    getEquippedItems() {
+        return Object.values(this.equipment).filter(item => item !== null);
+    }
+    
+    // Применить урон с учетом критов и эффектов
+    calculateDamage(baseDamage) {
+        let damage = baseDamage;
+        
+        // Критический удар
+        if (Math.random() < this.critChance) {
+            damage *= this.critDamage;
+        }
+        
+        return Math.floor(damage);
+    }
+    
+    // Восстановление здоровья (для вампиризма)
+    heal(amount) {
+        this.currentStats.hp = Math.min(this.currentStats.hp + amount, this.maxHp);
+    }
 }
+
+// Делаем глобальным
+window.Hero = Hero;
 ```
 
 **Что изменилось:**
@@ -1259,7 +1501,52 @@ this.initMutationObserver();
 
 **Объяснение:** Эти вызовы инициализируют все новые функции, которые мы добавили для улучшения работы на мобильных устройствах.
 
-#### 5.2 Добавьте метод initOrientationHandler()
+#### 5.2 Сделаем метод для адаптации канваса. Добавьте метод initResizeHandler() и после него initOrientationHandler()
+для оптимизации canvas
+```javascript
+
+```
+resizeCanvas() {
+        const container = this.canvas.parentElement;
+        if (!container) return;
+
+        // Получаем размеры контейнера
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+
+        if (containerWidth > 0 && containerHeight > 0) {
+            // Сохраняем старые размеры для проверки
+            const oldWidth = this.screenWidth;
+            const oldHeight = this.screenHeight;
+            
+            this.screenWidth = containerWidth;
+            this.screenHeight = containerHeight;
+            this.canvas.width = containerWidth;
+            this.canvas.height = containerHeight;
+
+            console.log('Canvas resized from', oldWidth, 'x', oldHeight, 'to', this.screenWidth, 'x', this.screenHeight);
+
+            // Если герой уже существует, обновляем камеру сразу
+            if (this.hero) {
+                this.updateCamera();
+            }
+        }
+    }
+```javascript
+ initResizeHandler() {
+        // Используем throttle для оптимизации
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                if (this.isRunning) {
+                    this.resizeCanvas();
+                }
+            }, 100);
+        });
+    }
+
+```
 
 После метода `initResizeHandler()` добавьте этот код:
 
@@ -1538,9 +1825,57 @@ constructor(worldX, worldY, heroData) {
 }
 ```
 
-#### 6.3 Обновите метод draw() в ArenaHero
+Так же реализуем методы для подгрузки инвентаря в бою
 
-Найдите метод `draw()` класса `ArenaHero` и **замените** его на этот код:
+```javascript
+loadWeapons() {
+        if (this.heroData.equipment && this.heroData.equipment.weapon) {
+            this.weapons.push(new ArenaWeapon(this, this.heroData.equipment.weapon));
+        } else {
+            this.weapons.push(new ArenaWeapon(this, {
+                name: 'Кулаки',
+                damage: 5,
+                range: 60,
+                cooldown: 0.5,
+                type: 'melee',
+                icon: '👊'
+            }));
+        }
+    }
+
+    loadConsumables() {
+        // Загружаем расходники из инвентаря (первые 3)
+        if (this.heroData.inventory) {
+            const consumables = this.heroData.inventory.filter(item => item && item.type === 'consumable');
+            this.battleConsumables = consumables.slice(0, 3).map(item => ({ ...item }));
+        }
+    }
+    
+    takeDamage(amount) {
+        this.hp -= amount;
+        if (this.hp < 0) this.hp = 0;
+        
+        // Визуальная обратная связь
+        this.color = '#ff0000';
+        setTimeout(() => this.color = '#4aff4a', 100);
+        
+        return this.hp <= 0;
+    }
+    
+    update(deltaTime, worldWidth, worldHeight) {
+        super.update(deltaTime, worldWidth, worldHeight);
+        
+        // Обновляем оружие
+        this.weapons.forEach(w => w.update(deltaTime));
+        
+        // Анимация
+        this.animationFrame += deltaTime * 10;
+    }
+```
+
+#### 6.3 Добавте метод draw() в ArenaHero
+
+В конце вставьте новый метод отрисовки `draw()` класса `ArenaHero` :
 
 ```javascript
 draw(ctx, cameraX, cameraY) {
@@ -1645,6 +1980,31 @@ draw(ctx, cameraX, cameraY) {
         this.magicBeam.draw(ctx, cameraX, cameraY);
     }
 }
+```
+
+Добавим методы заработка опыта и повышения уровня в бою если еще не сделали этого ранее 
+
+```javascript
+ addExp(amount) {
+        this.exp += amount;
+        while (this.exp >= 100) {
+            this.levelUp();
+        }
+    }
+    
+    levelUp() {
+        this.level++;
+        this.exp -= 100;
+        
+        this.maxHp += 10;
+        this.hp = this.maxHp;
+        this.attack += 2;
+        
+        this.heroData.level = this.level;
+        this.heroData.exp = this.exp;
+        this.heroData.baseStats.hp = this.maxHp;
+        this.heroData.baseStats.attack = this.attack;
+    }
 ```
 
 #### 6.4 Обновите класс ArenaEnemy
@@ -1800,10 +2160,277 @@ levelUp() {
 
 ### Шаг 8: Обновляем arena_style.css
 
-Откройте файл `arena_style.css` и **добавьте** эти стили в самый конец файла:
+Откройте файл `arena_style.css` и **замените** эти стили на прежние:
 
 ```css
 /* ========== НОВЫЕ СТИЛИ ДЛЯ ВЕРСИИ 6 ========== */
+
+/* Стили для арены */
+.arena-game-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: #000;
+    overflow: hidden;
+}
+
+/* Верхняя панель с информацией */
+.arena-header {
+    background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1f 100%);
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #e94560;
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+/* Статистика на арене */
+.arena-stats {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+    flex: 1;
+}
+
+.arena-stats .stat {
+    background: #16213e;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Прогресс бары */
+.progress-bar-container {
+    background: #16213e;
+    padding: 5px 15px;
+    border-radius: 20px;
+    min-width: 200px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background-color: #2a2a4a;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4aff4a, #00aa00);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.progress-bar-fill.hp {
+    background: linear-gradient(90deg, #ff4a4a, #aa0000);
+}
+
+.progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px black;
+}
+
+/* Кнопка паузы */
+.pause-btn {
+    background: #e94560;
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.pause-btn:hover {
+    background: #ff6b8b;
+    transform: scale(1.1);
+}
+
+/* Canvas для игры - занимает все доступное пространство */
+#gameCanvas {
+    display: block;
+    width: 100%;
+    flex: 1;
+    background: #000;
+    object-fit: cover; /* Растягивается на всю доступную область */
+    min-height: 0; /* Важно для flexbox */
+}
+
+/* Джойстик для мобильных устройств - по умолчанию скрыт */
+.joystick-container {
+    display: none;
+    position: absolute;
+    bottom: 30px;
+    left: 30px;
+    width: 120px;
+    height: 120px;
+    z-index: 20;
+}
+
+/* Показываем джойстик только на мобильных устройствах и планшетах */
+@media (max-width: 1024px) and (pointer: coarse) {
+    .joystick-container {
+        display: block;
+    }
+}
+
+.joystick-base {
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.joystick-thumb {
+    width: 50px;
+    height: 50px;
+    background: rgba(233, 69, 96, 0.8);
+    border-radius: 50%;
+    transition: transform 0.1s ease;
+}
+
+/* Меню паузы */
+.pause-menu {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.95);
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    z-index: 30;
+    border: 2px solid #e94560;
+    min-width: 300px;
+}
+
+.pause-menu h3 {
+    color: #e94560;
+    margin-bottom: 20px;
+    font-size: 24px;
+}
+
+.pause-menu button {
+    width: 100%;
+    margin: 10px 0;
+    padding: 12px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.resume-btn {
+    background: #4aff4a;
+    color: #000;
+}
+
+.resume-btn:hover {
+    background: #6aff6a;
+}
+
+.exit-arena-btn {
+    background: #e94560;
+    color: white;
+}
+
+.exit-arena-btn:hover {
+    background: #ff6b8b;
+}
+
+/* Навыки на арене */
+.arena-skills {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.skill-slot {
+    background: #16213e;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    position: relative;
+    border: 1px solid #0f3460;
+}
+
+.skill-slot.active {
+    border-color: #e94560;
+    box-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+}
+
+.skill-cooldown {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    background: #e94560;
+    color: white;
+    font-size: 10px;
+    padding: 2px 4px;
+    border-radius: 10px;
+    min-width: 16px;
+    text-align: center;
+}
+
+/* Адаптация для мобильных устройств */
+@media (max-width: 768px) {
+    .arena-stats {
+        gap: 10px;
+    }
+    
+    .progress-bar-container {
+        min-width: 150px;
+    }
+    
+    .arena-stats .stat {
+        padding: 3px 10px;
+        font-size: 0.9rem;
+    }
+    
+    .joystick-container {
+        width: 100px;
+        height: 100px;
+        bottom: 20px;
+        left: 20px;
+    }
+    
+    .joystick-thumb {
+        width: 40px;
+        height: 40px;
+    }
+}
 
 /* Исправления для мобильной версии */
 @media (max-width: 768px) {
@@ -1832,7 +2459,7 @@ levelUp() {
     }
 }
 
-/* Портретный режим на мобильных (телефон вертикально) */
+/* Портретный режим на мобильных */
 @media (max-width: 768px) and (orientation: portrait) {
     .arena-header {
         padding: 5px 10px;
@@ -1853,7 +2480,7 @@ levelUp() {
     }
 }
 
-/* Альбомный режим на мобильных (телефон горизонтально) */
+/* Альбомный режим на мобильных */
 @media (max-width: 1024px) and (orientation: landscape) {
     .arena-header {
         padding: 5px 15px;
@@ -1864,7 +2491,7 @@ levelUp() {
     }
 }
 
-/* Анимация для уведомлений */
+/* Анимации */
 @keyframes fadeInOut {
     0% { opacity: 0; transform: translate(-50%, -20px); }
     10% { opacity: 1; transform: translate(-50%, 0); }
@@ -1872,7 +2499,13 @@ levelUp() {
     100% { opacity: 0; transform: translate(-50%, -20px); }
 }
 
-/* Эффекты для слотов навыков */
+/* Улучшенные стили для статистики */
+#arenaKills {
+    font-weight: bold;
+    color: #ffd700;
+}
+
+/* Эффекты для навыков */
 .skill-slot {
     transition: all 0.3s ease;
     position: relative;
@@ -1896,29 +2529,61 @@ levelUp() {
     animation: pulse 2s infinite;
 }
 
-/* Анимация пульсации для активных навыков */
-@keyframes pulse {
-    0% { transform: scale(1); opacity: 0.5; }
-    50% { transform: scale(1.1); opacity: 0.8; }
-    100% { transform: scale(1); opacity: 0.5; }
-}
+```
 
-/* Стили для карточек навыков в модальном окне */
-.skill-choice-card {
-    background: #16213e;
-    padding: 15px;
-    border-radius: 10px;
-    text-align: center;
-    cursor: pointer;
-    border: 2px solid #0f3460;
-    transition: all 0.3s ease;
-}
+Так же добавим метод для реализации нового меню инвенторя в UIManager в конце файла
 
-.skill-choice-card:hover {
-    border-color: #e94560;
-    transform: scale(1.02);
-    box-shadow: 0 0 15px rgba(233,69,96,0.5);
-}
+```javascript
+showEquipMenu(hero, item) {
+        const validSlots = hero.getValidSlotsForItem(item);
+        const modal = document.getElementById('heroModal');
+        const modalBody = document.getElementById('modalBody');
+
+        if (validSlots.length === 0) {
+            alert('Этот предмет нельзя экипировать данному герою');
+            return;
+        }
+
+        modalBody.innerHTML = `
+            <h2 style="color: #e94560; margin-bottom: 20px;">Экипировка предмета</h2>
+            <div style="text-align: center; margin: 20px 0;">
+                <div style="font-size: 4rem;">${item.icon || '📦'}</div>
+                <h3 style="color: #fff; margin: 10px 0;">${item.name}</h3>
+                <p style="color: #aaa;">${item.description || ''}</p>
+            </div>
+            
+            <h3 style="color: #4aff4a; margin-bottom: 10px;">Выберите слот для экипировки:</h3>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 20px 0;">
+                ${validSlots.map(slot => `
+                    <button class="equip-slot-btn" data-slot="${slot}" style="background: #16213e; padding: 15px; border: 2px solid #0f3460; color: white; cursor: pointer; border-radius: 5px;">
+                        ${slot.charAt(0).toUpperCase() + slot.slice(1)}
+                        ${hero.equipment[slot] ? `<br><small style="color: #ffaa00;">(занято: ${hero.equipment[slot].name})</small>` : ''}
+                    </button>
+                `).join('')}
+            </div>
+            
+            <div style="margin-top: 20px; text-align: center;">
+                <button id="cancelEquipBtn" style="width: auto; padding: 10px 30px; background: #666; color: white; border: none; border-radius: 5px; cursor: pointer;">Отмена</button>
+            </div>
+        `;
+
+        document.querySelectorAll('.equip-slot-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const slot = e.target.dataset.slot;
+
+                if (hero.equip(item, slot)) {
+                    this.showNotification('✅ Предмет экипирован!');
+                    this.showHeroInventory(hero.id);
+                } else {
+                    this.showNotification('❌ Не удалось экипировать предмет', 'error');
+                }
+            });
+        });
+
+        document.getElementById('cancelEquipBtn').addEventListener('click', () => {
+            this.showHeroInventory(hero.id);
+        });
+    }
 ```
 
 ---
