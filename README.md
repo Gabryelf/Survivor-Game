@@ -1504,8 +1504,6 @@ this.initMutationObserver();
 #### 5.2 Сделаем метод для адаптации канваса. Добавьте метод initResizeHandler() и после него initOrientationHandler()
 для оптимизации canvas
 ```javascript
-
-```
 resizeCanvas() {
         const container = this.canvas.parentElement;
         if (!container) return;
@@ -1532,6 +1530,10 @@ resizeCanvas() {
             }
         }
     }
+```
+
+И далее добавляем другие вспомогательные методы
+
 ```javascript
  initResizeHandler() {
         // Используем throttle для оптимизации
@@ -2158,7 +2160,1108 @@ levelUp() {
 
 ---
 
-### Шаг 8: Обновляем arena_style.css
+### Шаг 8: Доработаем классы арены и обновляем arena_style.css
+
+Готовый скрипт булет тяжеловесным, но он вмещает все сущности арены, 
+тут представлен его полный код, вам нужно сверить его со своим и добавить 
+классы и методы которых нет в вашем коде. Позже мы разделим логически
+на разные скрипты все эти классы.
+
+```javascript
+// js/arena/GameEntity.js
+// Базовый класс для всех сущностей на арене
+
+class ArenaEntity {
+    constructor(worldX, worldY, radius, color = '#ffffff') {
+        this.worldX = worldX;
+        this.worldY = worldY;
+        this.radius = radius || 20;
+        this.vx = 0;
+        this.vy = 0;
+        this.speed = 0;
+        this.color = color;
+        this.isActive = true;
+        
+        // Для анимации
+        this.animationTimer = 0;
+        this.animationFrame = 0;
+        this.hitEffect = 0;
+        this.bobOffset = 0; // Для прыгающей анимации
+        this.bobSpeed = 8; // Скорость подпрыгивания
+        
+        // Спрайт менеджер
+        this.spriteManager = window.spriteManager;
+    }
+    
+    getScreenX(cameraX) {
+        return this.worldX - cameraX;
+    }
+    
+    getScreenY(cameraY) {
+        return this.worldY - cameraY;
+    }
+    
+    update(deltaTime, worldWidth, worldHeight) {
+        // Двигаем
+        this.worldX += this.vx * this.speed * deltaTime * 60;
+        this.worldY += this.vy * this.speed * deltaTime * 60;
+        
+        // Границы мира
+        this.worldX = Math.max(this.radius, Math.min(worldWidth - this.radius, this.worldX));
+        this.worldY = Math.max(this.radius, Math.min(worldHeight - this.radius, this.worldY));
+        
+        // Анимация - если движется, то подпрыгивает
+        if (this.vx !== 0 || this.vy !== 0) {
+            this.animationTimer += deltaTime * this.bobSpeed;
+            this.bobOffset = Math.sin(this.animationTimer) * 3; // Подпрыгивание на 3 пикселя
+        } else {
+            this.bobOffset = 0;
+        }
+        
+        // Эффект получения урона
+        if (this.hitEffect > 0) {
+            this.hitEffect -= deltaTime;
+        }
+    }
+    
+    draw(ctx, cameraX, cameraY) {
+        // Будет переопределено в наследниках
+    }
+}
+
+// Класс героя на арене
+class ArenaHero extends ArenaEntity {
+    constructor(worldX, worldY, heroData) {
+        super(worldX, worldY, 24, '#4aff4a');
+        
+        this.heroData = heroData;
+        this.hp = heroData.currentStats.hp;
+        this.maxHp = heroData.maxHp || heroData.currentStats.hp;
+        this.level = heroData.level;
+        this.exp = heroData.exp;
+        this.speed = heroData.currentStats.speed || 5;
+        
+        this.attack = heroData.currentStats.attack || 10;
+        this.defense = heroData.currentStats.defense || 5;
+        
+        this.expMagnet = 100;
+        this.weapons = [];
+        this.skillEffects = [];
+        
+        // Тип героя
+        this.heroType = heroData.type; // 'warrior', 'archer', 'mage', 'rogue'
+        
+        // Ключ спрайта для героя
+        this.spriteKey = this.heroType;
+    
+        // Оружие
+        this.weapons = [];
+        this.loadWeapons();
+    
+        // Сбор опыта
+        this.expMagnet = 150;
+        this.level = heroData.level;
+        this.exp = heroData.exp;
+    
+        // Для анимации
+        this.animationFrame = 0;
+        this.lastAttackTime = 0;
+        this.bobSpeed = 10; // Герой подпрыгивает быстрее
+    
+        // Специальные способности
+        this.traps = []; // Для разбойника
+        this.trapCooldown = 0;
+        this.trapInterval = 5; // Ловушка каждые 5 секунд
+    
+        // Для мага
+        this.magicBeam = null;
+        this.magicCooldown = 0;
+        this.magicInterval = 8; // Магия каждые 8 секунд
+    
+        // Расходники в бою (3 слота для зелий)
+        this.battleConsumables = [];
+        this.loadConsumables();
+    
+        // Убеждаемся что у heroData есть массив для навыков
+        if (!this.heroData.learnedSkills) {
+            this.heroData.learnedSkills = [];
+        }
+    }
+
+    loadWeapons() {
+        // Загружаем оружие из экипировки
+        if (this.heroData.equipment && this.heroData.equipment.weapon) {
+            this.weapons.push(new ArenaWeapon(this, this.heroData.equipment.weapon, this.heroType));
+        } else {
+            // Базовое оружие в зависимости от типа героя
+            let baseWeapon;
+            switch (this.heroType) {
+                case 'warrior':
+                    baseWeapon = {
+                        name: 'Меч',
+                        damage: 8,
+                        range: 70,
+                        cooldown: 1.4,
+                        type: 'melee',
+                        icon: '⚔️'
+                    };
+                    break;
+                case 'archer':
+                    baseWeapon = {
+                        name: 'Лук',
+                        damage: 12,
+                        range: 300,
+                        cooldown: 1.7,
+                        type: 'ranged',
+                        accuracy: 0.8,
+                        icon: '🏹'
+                    };
+                    break;
+                case 'mage':
+                    baseWeapon = {
+                        name: 'Посох',
+                        damage: 5,
+                        range: 200,
+                        cooldown: 2.8,
+                        type: 'magic',
+                        icon: '🔮'
+                    };
+                    break;
+                case 'rogue':
+                    baseWeapon = {
+                        name: 'Кинжалы',
+                        damage: 6,
+                        range: 50,
+                        cooldown: 0.75,
+                        type: 'melee',
+                        icon: '🗡️'
+                    };
+                    break;
+                default:
+                    baseWeapon = {
+                        name: 'Кулаки',
+                        damage: 5,
+                        range: 60,
+                        cooldown: 1.0,
+                        type: 'melee',
+                        icon: '👊'
+                    };
+            }
+            this.weapons.push(new ArenaWeapon(this, baseWeapon, this.heroType));
+        }
+    }
+
+    loadConsumables() {
+        // Загружаем расходники из инвентаря (первые 3)
+        if (this.heroData.inventory) {
+            const consumables = this.heroData.inventory.filter(item => item && item.type === 'consumable');
+            this.battleConsumables = consumables.slice(0, 3).map(item => ({ ...item }));
+        }
+    }
+
+    takeDamage(amount) {
+        const reducedDamage = Math.max(1, amount - this.defense);
+        this.hp -= reducedDamage;
+        this.hitEffect = 0.2;
+        
+        if (this.hp < 0) this.hp = 0;
+        return this.hp <= 0;
+    }
+
+    update(deltaTime, worldWidth, worldHeight) {
+        super.update(deltaTime, worldWidth, worldHeight);
+
+        // Обновляем оружие
+        this.weapons.forEach(w => w.update(deltaTime));
+
+        // Обновляем специальные способности
+        if (this.heroType === 'rogue') {
+            this.updateTraps(deltaTime);
+        } else if (this.heroType === 'mage') {
+            this.updateMagic(deltaTime);
+        }
+
+        // Анимация
+        this.animationFrame += deltaTime * 10;
+    }
+
+    updateTraps(deltaTime) {
+        if (this.trapCooldown > 0) {
+            this.trapCooldown -= deltaTime;
+        }
+
+        if (this.trapCooldown <= 0) {
+            this.traps.push(new ArenaTrap(this.worldX, this.worldY));
+            this.trapCooldown = this.trapInterval;
+        }
+
+        this.traps = this.traps.filter(trap => trap.isActive);
+        this.traps.forEach(trap => trap.update(deltaTime));
+    }
+
+    updateMagic(deltaTime) {
+        if (this.magicCooldown > 0) {
+            this.magicCooldown -= deltaTime;
+        }
+
+        if (this.magicCooldown <= 0 && !this.magicBeam) {
+            if (Math.abs(this.vx) > 0.1 || Math.abs(this.vy) > 0.1) {
+                this.magicBeam = new MagicBeam(this);
+                this.magicCooldown = 5.0;
+            }
+        }
+
+        if (this.magicBeam) {
+            this.magicBeam.update(deltaTime);
+            if (!this.magicBeam.isActive) {
+                this.magicBeam = null;
+            }
+        }
+    }
+
+    useConsumable(slotIndex) {
+        if (slotIndex < 0 || slotIndex >= this.battleConsumables.length) return false;
+
+        const item = this.battleConsumables[slotIndex];
+        if (!item) return false;
+
+        if (item.effect === 'heal') {
+            this.hp = Math.min(this.hp + item.value, this.maxHp);
+            this.battleConsumables.splice(slotIndex, 1);
+            return true;
+        } else if (item.effect === 'buff') {
+            this.attack += item.value;
+            setTimeout(() => {
+                this.attack -= item.value;
+            }, 10000);
+            this.battleConsumables.splice(slotIndex, 1);
+            return true;
+        }
+
+        return false;
+    }
+
+    addExp(amount) {
+        this.exp += amount;
+        
+        while (this.exp >= 100) {
+            this.levelUp();
+        }
+    }
+
+    levelUp() {
+        this.level++;
+        this.exp -= 100;
+        
+        this.maxHp += 10;
+        this.hp = this.maxHp;
+        this.attack += 2;
+        
+        if (this.heroData) {
+            this.heroData.levelUp();
+        }
+        
+        console.log(`Герой повысил уровень до ${this.level}!`);
+    }
+
+    draw(ctx, cameraX, cameraY) {
+        const screenX = this.getScreenX(cameraX);
+        const screenY = this.getScreenY(cameraY) + this.bobOffset; // Добавляем подпрыгивание
+        
+        if (screenX + this.radius < 0 || screenX - this.radius > ctx.canvas.width ||
+            screenY + this.radius < 0 || screenY - this.radius > ctx.canvas.height) {
+            return;
+        }
+        
+        ctx.save();
+        
+        // Эффект получения урона
+        if (this.hitEffect > 0) {
+            ctx.globalAlpha = 0.7;
+            ctx.filter = 'brightness(1.5)';
+        }
+        
+        // Получаем спрайт героя
+        let sprite = this.spriteManager ? this.spriteManager.getSprite(this.spriteKey) : null;
+        
+        if (sprite) {
+            // Небольшой наклон при движении для эффекта бега
+            if (this.vx !== 0 || this.vy !== 0) {
+                ctx.translate(screenX, screenY);
+                ctx.rotate(Math.sin(this.animationTimer * 2) * 0.03);
+                ctx.translate(-screenX, -screenY);
+            }
+            
+            ctx.drawImage(sprite, screenX - 24, screenY - 24, 48, 48);
+        } else {
+            // Fallback - цветной круг
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Иконка класса
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            let icon = '⚔️';
+            if (this.heroType === 'archer') icon = '🏹';
+            if (this.heroType === 'mage') icon = '🔮';
+            if (this.heroType === 'rogue') icon = '🗡️';
+            
+            ctx.fillText(icon, screenX, screenY);
+        }
+        
+        ctx.restore();
+        
+        // Полоска здоровья
+        const hpPercent = this.hp / this.maxHp;
+        const barWidth = 40;
+        const barHeight = 4;
+        
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(screenX - barWidth/2, screenY - this.radius - 8, barWidth, barHeight);
+        
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(screenX - barWidth/2, screenY - this.radius - 8, barWidth * hpPercent, barHeight);
+        
+        // Уровень
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 12px Arial';
+        ctx.fillText(`Lv.${this.level}`, screenX - 15, screenY - this.radius - 12);
+        
+        // Имя героя
+        ctx.font = '10px Arial';
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.fillText(this.heroData.name, screenX, screenY - 35);
+        
+        // Рисуем расходники
+        if (this.battleConsumables.length > 0) {
+            ctx.font = '10px Arial';
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'left';
+            for (let i = 0; i < this.battleConsumables.length; i++) {
+                const item = this.battleConsumables[i];
+                if (item) {
+                    ctx.fillText(item.icon, screenX - 30 + i * 20, screenY - 45);
+                }
+            }
+        }
+        
+        // Рисуем оружие
+        this.weapons.forEach(w => w.draw(ctx, cameraX, cameraY));
+        
+        // Рисуем ловушки для разбойника
+        if (this.heroType === 'rogue') {
+            this.traps.forEach(trap => trap.draw(ctx, cameraX, cameraY));
+        }
+        
+        // Рисуем магию для мага
+        if (this.heroType === 'mage' && this.magicBeam) {
+            this.magicBeam.draw(ctx, cameraX, cameraY);
+        }
+    }
+}
+
+// Класс врага на арене
+class ArenaEnemy extends ArenaEntity {
+    constructor(worldX, worldY, difficulty) {
+        super(worldX, worldY, 20);
+        
+        this.difficulty = difficulty;
+        
+        // Тип врага
+        const enemyTypes = ['goblin', 'skeleton', 'ghost', 'orc'];
+        this.type = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+        
+        // Характеристики в зависимости от типа
+        switch(this.type) {
+            case 'goblin':
+                this.hp = 30 * difficulty;
+                this.maxHp = this.hp;
+                this.attack = 5 * difficulty;
+                this.speed = 2;
+                this.expValue = 10;
+                this.color = '#2d5a27';
+                this.bobSpeed = 9; // Гоблин прыгает быстрее
+                break;
+            case 'skeleton':
+                this.hp = 40 * difficulty;
+                this.maxHp = this.hp;
+                this.attack = 8 * difficulty;
+                this.speed = 1.5;
+                this.expValue = 15;
+                this.color = '#aaaaaa';
+                this.bobSpeed = 6; // Скелет прыгает медленнее
+                break;
+            case 'ghost':
+                this.hp = 25 * difficulty;
+                this.maxHp = this.hp;
+                this.attack = 6 * difficulty;
+                this.speed = 3;
+                this.expValue = 12;
+                this.color = '#aa4aff';
+                this.bobSpeed = 4; // Призрак почти не прыгает
+                break;
+            case 'orc':
+                this.hp = 60 * difficulty;
+                this.maxHp = this.hp;
+                this.attack = 12 * difficulty;
+                this.speed = 2;
+                this.expValue = 25;
+                this.color = '#8B4513';
+                this.bobSpeed = 6; // Орк прыгает тяжело
+                break;
+            default:
+                this.hp = 30 * difficulty;
+                this.maxHp = this.hp;
+                this.attack = 5 * difficulty;
+                this.speed = 2;
+                this.expValue = 10;
+                this.color = '#ff0000';
+                this.bobSpeed = 4;
+        }
+        
+        this.attackCooldown = 0;
+        this.attackInterval = 1.0;
+        
+        this.spriteKey = this.type;
+        
+        // Эффекты
+        this.slowed = false;
+        this.slowTimer = 0;
+    }
+
+    takeDamage(amount) {
+        this.hp -= amount;
+        this.hitEffect = 0.15;
+        
+        if (this.hp <= 0) return true;
+        return false;
+    }
+
+    slowDown() {
+        if (!this.slowed) {
+            this.slowed = true;
+            this.speed /= 2;
+            this.slowTimer = 3;
+            this.bobSpeed /= 2; // Замедляем и анимацию
+        }
+    }
+
+    update(deltaTime, hero, worldWidth, worldHeight) {
+        super.update(deltaTime, worldWidth, worldHeight);
+        
+        // Обновляем эффекты
+        if (this.slowed) {
+            this.slowTimer -= deltaTime;
+            if (this.slowTimer <= 0) {
+                this.slowed = false;
+                this.speed *= 2;
+                this.bobSpeed *= 2;
+            }
+        }
+        
+        if (!hero) return;
+        
+        // Двигаемся к герою
+        const dx = hero.worldX - this.worldX;
+        const dy = hero.worldY - this.worldY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 10) {
+            this.vx = dx / distance;
+            this.vy = dy / distance;
+        } else {
+            this.vx = 0;
+            this.vy = 0;
+        }
+        
+        // Атака
+        if (distance < this.radius + hero.radius + 10) {
+            this.attackCooldown -= deltaTime;
+            
+            if (this.attackCooldown <= 0) {
+                hero.takeDamage(this.attack);
+                this.attackCooldown = this.attackInterval;
+            }
+        }
+    }
+
+    draw(ctx, cameraX, cameraY) {
+        const screenX = this.getScreenX(cameraX);
+        const screenY = this.getScreenY(cameraY) + this.bobOffset; // Добавляем подпрыгивание
+        
+        if (screenX + this.radius < 0 || screenX - this.radius > ctx.canvas.width ||
+            screenY + this.radius < 0 || screenY - this.radius > ctx.canvas.height) {
+            return;
+        }
+        
+        ctx.save();
+        
+        // Эффект получения урона
+        if (this.hitEffect > 0) {
+            ctx.globalAlpha = 0.8;
+            ctx.filter = 'brightness(1.8) sepia(1)';
+        }
+        
+        // Получаем спрайт врага
+        let sprite = this.spriteManager ? this.spriteManager.getSprite(this.spriteKey) : null;
+        
+        if (sprite) {
+            // Небольшой наклон при движении
+            if (this.vx !== 0 || this.vy !== 0) {
+                ctx.translate(screenX, screenY);
+                ctx.rotate(Math.sin(this.animationTimer * 2) * 0.03);
+                ctx.translate(-screenX, -screenY);
+            }
+            
+            ctx.drawImage(sprite, screenX - 20, screenY - 20, 40, 40);
+        } else {
+            // Fallback - цветной круг
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        ctx.restore();
+        
+        // Полоска здоровья
+        const hpPercent = this.hp / this.maxHp;
+        const barWidth = 30;
+        const barHeight = 3;
+        
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(screenX - barWidth/2, screenY - this.radius - 5, barWidth, barHeight);
+        
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(screenX - barWidth/2, screenY - this.radius - 5, barWidth * hpPercent, barHeight);
+        
+        // Индикатор замедления
+        if (this.slowed) {
+            ctx.fillStyle = '#00aaff';
+            ctx.beginPath();
+            ctx.arc(screenX - 15, screenY - 15, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+}
+
+// Класс оружия на арене (без изменений, оставляем как было)
+class ArenaWeapon {
+    constructor(owner, weaponData, heroType = 'warrior') {
+        this.owner = owner;
+        this.data = weaponData;
+        this.heroType = heroType;
+        this.cooldown = 0;
+        this.projectiles = [];
+    }
+
+    update(deltaTime) {
+        if (this.cooldown > 0) {
+            this.cooldown -= deltaTime;
+        }
+
+        if (this.cooldown <= 0) {
+            this.attack();
+            this.cooldown = this.data.cooldown || 1.0;
+        }
+
+        this.projectiles = this.projectiles.filter(p => p.isActive);
+        this.projectiles.forEach(p => p.update(deltaTime));
+    }
+
+    attack() {
+        const arena = window.currentArena;
+        if (!arena || !arena.enemies || arena.enemies.length === 0) return;
+
+        if (this.data.type === 'ranged' || this.heroType === 'archer') {
+            const target = this.selectTarget();
+            if (target) {
+                const accuracy = this.data.accuracy || 0.8;
+                this.projectiles.push(new RangedProjectile(this.owner, this.data, target, accuracy));
+            }
+        } else if (this.data.type === 'magic' || this.heroType === 'mage') {
+            const angle = 25 * Math.PI / 180;
+            this.projectiles.push(new MagicProjectile(this.owner, this.data, angle));
+        } else {
+            this.projectiles.push(new MeleeProjectile(this.owner, this.data));
+        }
+    }
+
+    selectTarget() {
+        const arena = window.currentArena;
+        if (!arena || !arena.enemies || arena.enemies.length === 0) return null;
+
+        let closestEnemy = null;
+        let closestDistance = Infinity;
+
+        arena.enemies.forEach(enemy => {
+            if (!enemy.isActive) return;
+            const distance = Math.hypot(enemy.worldX - this.owner.worldX, enemy.worldY - this.owner.worldY);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestEnemy = enemy;
+            }
+        });
+
+        return closestEnemy;
+    }
+
+    draw(ctx, cameraX, cameraY) {
+        this.projectiles.forEach(p => p.draw(ctx, cameraX, cameraY));
+
+        if (this.cooldown > 0 && this.owner) {
+            const screenX = this.owner.getScreenX(cameraX);
+            const screenY = this.owner.getScreenY(cameraY);
+
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, 30, 0, Math.PI * 2 * (1 - this.cooldown / (this.data.cooldown || 1.0)));
+            ctx.strokeStyle = '#ffff00';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+    }
+}
+
+// Класс снаряда дальнего боя
+class RangedProjectile {
+    constructor(owner, data, target, accuracy = 0.8) {
+        this.owner = owner;
+        this.worldX = owner.worldX;
+        this.worldY = owner.worldY;
+        this.data = data;
+        this.target = target;
+        this.speed = 400;
+        this.radius = 6;
+        this.isActive = true;
+        this.damage = data.damage || 5;
+
+        const dx = target.worldX - this.worldX;
+        const dy = target.worldY - this.worldY;
+        const distance = Math.hypot(dx, dy);
+
+        if (Math.random() > accuracy) {
+            const missAngle = (Math.random() - 0.5) * 0.5;
+            const angle = Math.atan2(dy, dx) + missAngle;
+
+            this.vx = Math.cos(angle);
+            this.vy = Math.sin(angle);
+
+            this.targetX = this.worldX + Math.cos(angle) * distance;
+            this.targetY = this.worldY + Math.sin(angle) * distance;
+        } else {
+            this.vx = dx / distance;
+            this.vy = dy / distance;
+            this.targetX = target.worldX;
+            this.targetY = target.worldY;
+        }
+    }
+
+    update(deltaTime) {
+        const dx = this.targetX - this.worldX;
+        const dy = this.targetY - this.worldY;
+        const distance = Math.hypot(dx, dy);
+
+        if (distance < 10) {
+            this.isActive = false;
+            
+            const arena = window.currentArena;
+            if (arena && arena.enemies && this.target && this.target.isActive) {
+                const distToTarget = Math.hypot(this.worldX - this.target.worldX, this.worldY - this.target.worldY);
+                if (distToTarget < this.target.radius + 10) {
+                    this.target.takeDamage(this.damage);
+                    if (this.target.hp <= 0) {
+                        arena.spawnExpGem(this.target.worldX, this.target.worldY, this.target.expValue);
+                    }
+                }
+            }
+        } else {
+            this.worldX += this.vx * this.speed * deltaTime;
+            this.worldY += this.vy * this.speed * deltaTime;
+        }
+    }
+
+    draw(ctx, cameraX, cameraY) {
+        const screenX = this.worldX - cameraX;
+        const screenY = this.worldY - cameraY;
+
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffaa00';
+        ctx.shadowColor = '#ff0';
+        ctx.shadowBlur = 10;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+}
+
+// Класс магического снаряда
+class MagicProjectile {
+    constructor(owner, data, spreadAngle) {
+        this.owner = owner;
+        this.data = data;
+        this.lifetime = 2.0;
+        this.isActive = true;
+        this.hitEnemies = new Set();
+        this.damage = data.damage || 5;
+        this.spreadAngle = spreadAngle;
+
+        this.beams = [];
+        const numBeams = 5;
+        const baseAngle = Math.atan2(owner.vy, owner.vx) || 0;
+
+        for (let i = 0; i < numBeams; i++) {
+            const angleOffset = (i - (numBeams - 1) / 2) * spreadAngle / numBeams;
+            const angle = baseAngle + angleOffset;
+
+            this.beams.push({
+                vx: Math.cos(angle),
+                vy: Math.sin(angle),
+                x: owner.worldX,
+                y: owner.worldY,
+                hitEnemies: new Set()
+            });
+        }
+    }
+
+    update(deltaTime) {
+        this.lifetime -= deltaTime;
+        if (this.lifetime <= 0) {
+            this.isActive = false;
+        }
+
+        const speed = 300;
+        this.beams.forEach(beam => {
+            beam.x += beam.vx * speed * deltaTime;
+            beam.y += beam.vy * speed * deltaTime;
+        });
+
+        const arena = window.currentArena;
+        if (arena && arena.enemies) {
+            arena.enemies.forEach(enemy => {
+                this.beams.forEach(beam => {
+                    if (!beam.hitEnemies.has(enemy)) {
+                        const distance = Math.hypot(beam.x - enemy.worldX, beam.y - enemy.worldY);
+                        if (distance < enemy.radius + 20) {
+                            enemy.takeDamage(this.damage);
+                            beam.hitEnemies.add(enemy);
+
+                            if (enemy.hp <= 0) {
+                                arena.spawnExpGem(enemy.worldX, enemy.worldY, enemy.expValue);
+                            }
+                        }
+                    }
+                });
+            });
+        }
+    }
+
+    draw(ctx, cameraX, cameraY) {
+        this.beams.forEach(beam => {
+            const screenX = beam.x - cameraX;
+            const screenY = beam.y - cameraY;
+
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, 10, 0, Math.PI * 2);
+            ctx.fillStyle = '#aa00ff';
+            ctx.globalAlpha = 0.6;
+            ctx.fill();
+            ctx.globalAlpha = 1;
+
+            const ownerScreenX = this.owner.getScreenX(cameraX);
+            const ownerScreenY = this.owner.getScreenY(cameraY);
+
+            ctx.beginPath();
+            ctx.moveTo(ownerScreenX, ownerScreenY);
+            ctx.lineTo(screenX, screenY);
+            ctx.strokeStyle = '#aa00ff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        });
+    }
+}
+
+// Класс снаряда ближнего боя
+class MeleeProjectile {
+    constructor(owner, data) {
+        this.owner = owner;
+        this.data = data;
+        this.lifetime = 0.2;
+        this.isActive = true;
+        this.hitEnemies = new Set();
+    }
+
+    update(deltaTime) {
+        this.lifetime -= deltaTime;
+        if (this.lifetime <= 0) {
+            this.isActive = false;
+            return;
+        }
+
+        const arena = window.currentArena;
+        if (arena && arena.enemies && this.owner) {
+            arena.enemies.forEach(enemy => {
+                if (!this.hitEnemies.has(enemy) && enemy.isActive) {
+                    const distance = Math.hypot(
+                        enemy.worldX - this.owner.worldX,
+                        enemy.worldY - this.owner.worldY
+                    );
+                    
+                    if (distance < this.owner.radius + enemy.radius + (this.data.range || 60)) {
+                        enemy.takeDamage(this.data.damage || 5);
+                        this.hitEnemies.add(enemy);
+                        
+                        if (enemy.hp <= 0) {
+                            arena.spawnExpGem(enemy.worldX, enemy.worldY, enemy.expValue);
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    draw(ctx, cameraX, cameraY) {
+        if (!this.owner) return;
+
+        const screenX = this.owner.getScreenX(cameraX);
+        const screenY = this.owner.getScreenY(cameraY);
+
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, this.data.range || 60, 0, Math.PI * 2);
+        ctx.strokeStyle = '#ffff00';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+}
+
+// Класс ловушки для разбойника
+class ArenaTrap {
+    constructor(x, y) {
+        this.worldX = x;
+        this.worldY = y;
+        this.radius = 15;
+        this.isActive = true;
+        this.lifetime = 10;
+        this.triggered = false;
+        this.hitEnemies = new Set();
+    }
+
+    update(deltaTime) {
+        this.lifetime -= deltaTime;
+        if (this.lifetime <= 0) {
+            this.isActive = false;
+        }
+
+        if (!this.triggered) {
+            const arena = window.currentArena;
+            if (arena && arena.enemies) {
+                arena.enemies.forEach(enemy => {
+                    if (!this.hitEnemies.has(enemy)) {
+                        const distance = Math.hypot(enemy.worldX - this.worldX, enemy.worldY - this.worldY);
+                        if (distance < this.radius + enemy.radius) {
+                            enemy.takeDamage(15);
+                            enemy.slowDown();
+                            this.hitEnemies.add(enemy);
+                            this.triggered = true;
+
+                            if (enemy.hp <= 0) {
+                                arena.spawnExpGem(enemy.worldX, enemy.worldY, enemy.expValue);
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    draw(ctx, cameraX, cameraY) {
+        const screenX = this.worldX - cameraX;
+        const screenY = this.worldY - cameraY;
+
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.triggered ? '#888888' : '#ffaa00';
+        ctx.globalAlpha = 0.5;
+        ctx.fill();
+
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#aa5500';
+        for (let i = 0; i < 5; i++) {
+            const angle = (i / 5) * Math.PI * 2;
+            const x = screenX + Math.cos(angle) * this.radius;
+            const y = screenY + Math.sin(angle) * this.radius;
+            ctx.beginPath();
+            ctx.moveTo(screenX, screenY);
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = '#aa5500';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        ctx.font = '10px Arial';
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.fillText(Math.ceil(this.lifetime) + 'с', screenX, screenY - 15);
+    }
+}
+
+// Класс магического луча для мага
+class MagicBeam {
+    constructor(owner) {
+        this.owner = owner;
+        this.lifetime = 1.0;
+        this.isActive = true;
+        this.hitEnemies = new Set();
+        this.beams = [];
+        this.damagePerBeam = 8;
+
+        const directionX = owner.vx || 1;
+        const directionY = owner.vy || 0;
+
+        const length = Math.sqrt(directionX * directionX + directionY * directionY);
+        const baseAngle = length > 0 ? Math.atan2(directionY, directionX) : 0;
+
+        const angles = [
+            baseAngle - 30 * Math.PI / 180,
+            baseAngle - 10 * Math.PI / 180,
+            baseAngle + 10 * Math.PI / 180,
+            baseAngle + 30 * Math.PI / 180
+        ];
+
+        angles.forEach(angle => {
+            this.beams.push({
+                x: owner.worldX,
+                y: owner.worldY,
+                vx: Math.cos(angle),
+                vy: Math.sin(angle),
+                active: true,
+                hitEnemies: new Set()
+            });
+        });
+    }
+
+    update(deltaTime) {
+        this.lifetime -= deltaTime;
+        if (this.lifetime <= 0) {
+            this.isActive = false;
+            return;
+        }
+
+        const speed = 400;
+
+        this.beams.forEach(beam => {
+            if (!beam.active) return;
+
+            beam.x += beam.vx * speed * deltaTime;
+            beam.y += beam.vy * speed * deltaTime;
+
+            const arena = window.currentArena;
+            if (arena && arena.enemies) {
+                arena.enemies.forEach(enemy => {
+                    if (!beam.hitEnemies.has(enemy)) {
+                        const distance = Math.hypot(beam.x - enemy.worldX, beam.y - enemy.worldY);
+                        if (distance < enemy.radius + 15) {
+                            enemy.takeDamage(this.damagePerBeam);
+                            beam.hitEnemies.add(enemy);
+
+                            if (enemy.hp <= 0) {
+                                arena.spawnExpGem(enemy.worldX, enemy.worldY, enemy.expValue);
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    draw(ctx, cameraX, cameraY) {
+        const ownerX = this.owner.getScreenX(cameraX);
+        const ownerY = this.owner.getScreenY(cameraY);
+
+        this.beams.forEach(beam => {
+            if (!beam.active) return;
+
+            const beamX = beam.x - cameraX;
+            const beamY = beam.y - cameraY;
+
+            ctx.beginPath();
+            ctx.moveTo(ownerX, ownerY);
+            ctx.lineTo(beamX, beamY);
+            ctx.strokeStyle = '#aa4aff';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(beamX, beamY, 8, 0, Math.PI * 2);
+            ctx.fillStyle = '#aa4aff';
+            ctx.shadowColor = '#ff00ff';
+            ctx.shadowBlur = 15;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        });
+    }
+}
+
+// Кристалл опыта
+class ExpGem extends ArenaEntity {
+    constructor(worldX, worldY, value) {
+        super(worldX, worldY, 10, '#ffd700');
+        this.value = value || 5;
+        this.speed = 0;
+        this.spriteKey = 'expGem';
+        this.floatOffset = 0;
+        this.floatDir = 1;
+        this.bobSpeed = 2; // Медленное парение
+    }
+
+    update(deltaTime, worldWidth, worldHeight) {
+        super.update(deltaTime, worldWidth, worldHeight);
+        
+        // Кристаллы парят в воздухе
+        this.bobOffset = Math.sin(this.animationTimer * 2) * 3;
+    }
+
+    draw(ctx, cameraX, cameraY) {
+        const screenX = this.getScreenX(cameraX);
+        const screenY = this.getScreenY(cameraY) + this.bobOffset;
+        
+        if (screenX + this.radius < 0 || screenX - this.radius > ctx.canvas.width ||
+            screenY + this.radius < 0 || screenY - this.radius > ctx.canvas.height) {
+            return;
+        }
+        
+        let sprite = this.spriteManager ? this.spriteManager.getSprite('expGem') : null;
+        
+        if (sprite) {
+            ctx.drawImage(sprite, screenX - 12, screenY - 12, 24, 24);
+        } else {
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+}
+
+window.ArenaEntity = ArenaEntity;
+window.ArenaHero = ArenaHero;
+window.ArenaEnemy = ArenaEnemy;
+window.ArenaWeapon = ArenaWeapon;
+window.ArenaTrap = ArenaTrap;
+window.MagicBeam = MagicBeam;
+window.RangedProjectile = RangedProjectile;
+window.MagicProjectile = MagicProjectile;
+window.MeleeProjectile = MeleeProjectile;
+window.ExpGem = ExpGem;
+```
+
 
 Откройте файл `arena_style.css` и **замените** эти стили на прежние:
 
