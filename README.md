@@ -479,8 +479,7 @@ window.EnemyTypeConfig = EnemyTypeConfig;
 #### 1.4 Обновляем `js/config/heroClasses.js` - добавляем стартовые навыки
 
 ```javascript
-// js/config/heroClasses.js (дополнение)
-// Добавляем стартовые навыки и эффекты
+// js/config/heroClasses.js (исправленная версия)
 
 const HeroClassConfig = {
     warrior: {
@@ -488,10 +487,10 @@ const HeroClassConfig = {
         baseStats: { hp: 120, attack: 18, defense: 12, speed: 8 },
         description: 'Мастер ближнего боя, может носить тяжелую броню',
         equipmentSlots: {
-            weapon1: { type: 'weapon' },
-            weapon2: { type: ['weapon', 'shield'] },
-            armor: { type: 'armor' },
-            accessory: { type: 'accessory' }
+            weapon1: { type: 'weapon', required: false },
+            weapon2: { type: ['weapon', 'shield'], required: false },
+            armor: { type: 'armor', required: true },
+            accessory: { type: 'accessory', required: false }
         },
         startingWeapon: {
             name: 'Меч',
@@ -501,7 +500,6 @@ const HeroClassConfig = {
             type: 'melee',
             icon: '⚔️'
         },
-        // НОВОЕ: Стартовые навыки
         startingSkills: [
             {
                 id: 'skill_warrior_toughness',
@@ -511,11 +509,12 @@ const HeroClassConfig = {
                 icon: '❤️'
             }
         ],
-        // НОВОЕ: Классовые бонусы
         classBonuses: {
-            blockChance: 0.1,           // 10% шанс заблокировать атаку
-            blockReduction: 0.5,         // Блок уменьшает урон на 50%
-            healthRegen: 1               // Регенерация 1 HP в секунду
+            blockChance: 0.1,
+            blockReduction: 0.5,
+            healthRegen: 1,
+            critChance: 0,
+            critDamage: 1.5
         },
         color: '#4aff4a',
         icon: '⚔️'
@@ -526,10 +525,10 @@ const HeroClassConfig = {
         baseStats: { hp: 80, attack: 22, defense: 6, speed: 15 },
         description: 'Мастер дальнего боя, наносит критический урон',
         equipmentSlots: {
-            weapon1: { type: 'weapon' },
-            armor: { type: 'armor' },
-            accessory1: { type: 'accessory' },
-            accessory2: { type: 'accessory' }
+            weapon1: { type: 'weapon', required: true },
+            armor: { type: 'armor', required: true },
+            accessory1: { type: 'accessory', required: false },
+            accessory2: { type: 'accessory', required: false }
         },
         startingWeapon: {
             name: 'Лук',
@@ -540,7 +539,6 @@ const HeroClassConfig = {
             accuracy: 0.8,
             icon: '🏹'
         },
-        // НОВОЕ: Стартовые навыки
         startingSkills: [
             {
                 id: 'skill_archer_accuracy',
@@ -550,17 +548,96 @@ const HeroClassConfig = {
                 icon: '🎯'
             }
         ],
-        // НОВОЕ: Классовые бонусы
         classBonuses: {
-            critChance: 0.15,            // 15% базовый шанс крита
-            critDamage: 2.0,              // Крит наносит двойной урон
-            rangeBonus: 1.2                // +20% к дальности
+            critChance: 0.15,
+            critDamage: 2.0,
+            rangeBonus: 1.2,
+            healthRegen: 0.5,
+            blockChance: 0,
+            blockReduction: 0
         },
         color: '#ffaa00',
         icon: '🏹'
-    }
+    },
     
-    // ... остальные классы
+    mage: {
+        name: 'Маг',
+        baseStats: { hp: 70, attack: 25, defense: 4, speed: 12 },
+        description: 'Владеет магией, может замедлять врагов',
+        equipmentSlots: {
+            weapon1: { type: 'weapon', required: true },
+            accessory1: { type: 'accessory', required: false },
+            accessory2: { type: 'accessory', required: false },
+            accessory3: { type: 'accessory', required: false }
+        },
+        startingWeapon: {
+            name: 'Посох',
+            damage: 5,
+            range: 200,
+            cooldown: 2.8,
+            type: 'magic',
+            icon: '🔮'
+        },
+        startingSkills: [
+            {
+                id: 'skill_mage_intelligence',
+                name: 'Интеллект',
+                description: 'Увеличивает урон магии на 15%',
+                effects: { attack: 8 },
+                icon: '🔮'
+            }
+        ],
+        classBonuses: {
+            manaRegen: 2,
+            spellDamage: 1.2,
+            healthRegen: 0.3,
+            blockChance: 0,
+            blockReduction: 0,
+            critChance: 0,
+            critDamage: 1.5
+        },
+        color: '#aa4aff',
+        icon: '🔮'
+    },
+    
+    rogue: {
+        name: 'Разбойник',
+        baseStats: { hp: 90, attack: 16, defense: 8, speed: 18 },
+        description: 'Быстрый и смертоносный, ставит ловушки',
+        equipmentSlots: {
+            weapon1: { type: 'weapon', required: true },
+            weapon2: { type: 'weapon', required: false },
+            accessory1: { type: 'accessory', required: false },
+            accessory2: { type: 'accessory', required: false }
+        },
+        startingWeapon: {
+            name: 'Кинжалы',
+            damage: 6,
+            range: 50,
+            cooldown: 0.75,
+            type: 'melee',
+            icon: '🗡️'
+        },
+        startingSkills: [
+            {
+                id: 'skill_rogue_poison',
+                name: 'Отравленные клинки',
+                description: 'Отравляет врагов, нанося 5 урона в секунду в течение 3 секунд',
+                effects: { special: { type: 'poison', damage: 5, duration: 3 } },
+                icon: '☠️'
+            }
+        ],
+        classBonuses: {
+            critChance: 0.2,
+            critDamage: 2.5,
+            dodgeChance: 0.1,
+            healthRegen: 0.5,
+            blockChance: 0,
+            blockReduction: 0
+        },
+        color: '#ff4a4a',
+        icon: '🗡️'
+    }
 };
 
 window.HeroClassConfig = HeroClassConfig;
@@ -1414,7 +1491,7 @@ setInterval(() => {
 **Теория:** Навыки теперь должны действительно влиять на характеристики героя. Мы добавим метод `applySkillEffects()`, который пересчитывает все бонусы.
 
 ```javascript
-// js/core/Hero.js (обновленная версия)
+// js/core/Hero.js (исправленная версия)
 // ==============================
 // Класс героя в игре.
 // ==============================
@@ -1433,32 +1510,41 @@ class Hero {
         const classConfig = window.HeroClassConfig[type] || window.HeroClassConfig.warrior;
         
         // Базовые характеристики
-        this.baseStats = {
+        this.rawStats = {
             hp: baseStats.hp || classConfig.baseStats.hp,
             attack: baseStats.attack || classConfig.baseStats.attack,
             defense: baseStats.defense || classConfig.baseStats.defense,
             speed: baseStats.speed || classConfig.baseStats.speed
         };
         
-        // НОВОЕ: Базовая статистика (без бонусов)
-        this.rawStats = { ...this.baseStats };
-        
         // Максимальное здоровье
-        this.maxHp = this.baseStats.hp;
+        this.maxHp = this.rawStats.hp;
         
         // Текущие характеристики (будут пересчитаны)
-        this.currentStats = { ...this.baseStats };
+        this.currentStats = { ...this.rawStats };
         
-        // Снаряжение
+        // Снаряжение на основе конфигурации
         this.equipment = this.initEquipmentSlots(classConfig.equipmentSlots);
         
-        // НОВОЕ: Навыки - теперь массив объектов, а не ID
+        // Навыки
         this.learnedSkills = [];
         
-        // НОВОЕ: Стартовые навыки из конфига
+        // Классовые бонусы с проверкой на undefined
+        this.classBonuses = classConfig.classBonuses || {};
+        
+        // Боевые характеристики
+        this.critChance = this.classBonuses.critChance || 0;
+        this.critDamage = this.classBonuses.critDamage || 1.5;
+        this.lifesteal = 0;
+        this.specialEffects = [];
+        
+        // Конфигурация класса
+        this.classConfig = classConfig;
+        
+        // Инициализация стартовых навыков
         if (classConfig.startingSkills) {
             classConfig.startingSkills.forEach(skillData => {
-                const skill = new Skill(
+                const skill = new window.Skill(
                     skillData.id,
                     skillData.name,
                     skillData.description,
@@ -1476,19 +1562,7 @@ class Hero {
         this.skillPoints = 0;
         this.pendingSkillLevel = 0;
         
-        // НОВОЕ: Классовые бонусы
-        this.classBonuses = classConfig.classBonuses || {};
-        
-        // Боевые характеристики
-        this.critChance = this.classBonuses.critChance || 0;
-        this.critDamage = this.classBonuses.critDamage || 1.5;
-        this.lifesteal = 0;
-        this.specialEffects = [];
-        
-        // Конфигурация класса
-        this.classConfig = classConfig;
-        
-        // НОВОЕ: Пересчитываем все бонусы
+        // Пересчитываем все бонусы
         this.recalculateStats();
     }
     
@@ -1500,11 +1574,15 @@ class Hero {
         return slots;
     }
     
-    // НОВЫЙ МЕТОД: Пересчет всех характеристик
     recalculateStats() {
         // Начинаем с базовых характеристик
         this.currentStats = { ...this.rawStats };
         this.maxHp = this.rawStats.hp;
+        
+        // Сбрасываем боевые характеристики
+        this.critChance = this.classBonuses.critChance || 0;
+        this.critDamage = this.classBonuses.critDamage || 1.5;
+        this.lifesteal = 0;
         
         // Добавляем бонусы от экипировки
         const allEquipment = Object.values(this.equipment).filter(item => item !== null);
@@ -1529,22 +1607,19 @@ class Hero {
         
         // Добавляем бонусы от навыков
         this.learnedSkills.forEach(skill => {
-            if (skill.effects.attack) this.currentStats.attack += skill.effects.attack;
-            if (skill.effects.defense) this.currentStats.defense += skill.effects.defense;
-            if (skill.effects.hp) {
-                this.currentStats.hp += skill.effects.hp;
-                this.maxHp += skill.effects.hp;
+            if (skill.effects) {
+                if (skill.effects.attack) this.currentStats.attack += skill.effects.attack;
+                if (skill.effects.defense) this.currentStats.defense += skill.effects.defense;
+                if (skill.effects.hp) {
+                    this.currentStats.hp += skill.effects.hp;
+                    this.maxHp += skill.effects.hp;
+                }
+                if (skill.effects.speed) this.currentStats.speed += skill.effects.speed;
+                if (skill.effects.critChance) this.critChance += skill.effects.critChance;
+                if (skill.effects.critDamage) this.critDamage += skill.effects.critDamage;
+                if (skill.effects.lifesteal) this.lifesteal += skill.effects.lifesteal;
             }
-            if (skill.effects.speed) this.currentStats.speed += skill.effects.speed;
-            if (skill.effects.critChance) this.critChance += skill.effects.critChance;
-            if (skill.effects.critDamage) this.critDamage += skill.effects.critDamage;
-            if (skill.effects.lifesteal) this.lifesteal += skill.effects.lifesteal;
         });
-        
-        // Добавляем классовые бонусы
-        if (this.classBonuses.healthRegen) {
-            // Будет обрабатываться отдельно
-        }
         
         // Убеждаемся, что текущее HP не превышает максимум
         if (this.currentStats.hp > this.maxHp) {
@@ -1672,6 +1747,11 @@ class Hero {
             return Math.floor(damage);
         }
         
+        // Проверка на уклонение (для разбойника)
+        if (this.classBonuses.dodgeChance && Math.random() < this.classBonuses.dodgeChance) {
+            return 0; // Полное уклонение
+        }
+        
         // Критический удар
         if (Math.random() < this.critChance) {
             damage *= this.critDamage;
@@ -1687,7 +1767,7 @@ class Hero {
     
     // Регенерация здоровья (вызывается каждый кадр на арене)
     regen(deltaTime) {
-        if (this.classBonuses.healthRegen) {
+        if (this.classBonuses && this.classBonuses.healthRegen) {
             this.heal(this.classBonuses.healthRegen * deltaTime);
         }
     }
@@ -1699,10 +1779,7 @@ window.Hero = Hero;
 #### 3.3 Обновляем `js/core/Skill.js` - правильное применение эффектов
 
 ```javascript
-// js/core/Skill.js (обновленная версия)
-// ==============================
-// Класс навыков для героев
-// ==============================
+// js/core/Skill.js (исправленная версия)
 
 class Skill {
     constructor(id, name, description, type, heroClasses, levelRequirement, effects, icon = '✨') {
@@ -1712,14 +1789,14 @@ class Skill {
         this.type = type; // 'passive', 'active', 'ultimate'
         this.heroClasses = heroClasses;
         this.levelRequirement = levelRequirement;
-        this.effects = effects;
+        this.effects = effects || {}; // Важно: если effects undefined, ставим пустой объект
         this.icon = icon;
         this.isUnlocked = false;
         
         // Для активных навыков
         this.cooldown = 0;
-        this.maxCooldown = effects.cooldown || 0;
-        this.duration = effects.duration || 0;
+        this.maxCooldown = (effects && effects.cooldown) || 0;
+        this.duration = (effects && effects.duration) || 0;
         this.isActive = false;
         this.activeTimer = 0;
     }
@@ -1731,48 +1808,31 @@ class Skill {
         // Сохраняем ссылку на героя для активных навыков
         this.hero = hero;
         
-        // Применяем пассивные эффекты
-        if (this.type === 'passive') {
-            this.applyPassive(hero);
+        // Применяем пассивные эффекты напрямую к rawStats
+        if (this.type === 'passive' && this.effects) {
+            if (this.effects.attack) {
+                hero.rawStats.attack += this.effects.attack;
+                console.log(`  +${this.effects.attack} к атаке`);
+            }
+            if (this.effects.defense) {
+                hero.rawStats.defense += this.effects.defense;
+                console.log(`  +${this.effects.defense} к защите`);
+            }
+            if (this.effects.hp) {
+                hero.rawStats.hp += this.effects.hp;
+                console.log(`  +${this.effects.hp} к здоровью`);
+            }
+            if (this.effects.speed) {
+                hero.rawStats.speed += this.effects.speed;
+                console.log(`  +${this.effects.speed} к скорости`);
+            }
         }
         
         // Пересчитываем характеристики героя
         hero.recalculateStats();
     }
     
-    // Применить пассивные эффекты
-    applyPassive(hero) {
-        if (this.effects.attack) {
-            hero.rawStats.attack += this.effects.attack;
-            console.log(`  +${this.effects.attack} к атаке`);
-        }
-        if (this.effects.defense) {
-            hero.rawStats.defense += this.effects.defense;
-            console.log(`  +${this.effects.defense} к защите`);
-        }
-        if (this.effects.hp) {
-            hero.rawStats.hp += this.effects.hp;
-            console.log(`  +${this.effects.hp} к здоровью`);
-        }
-        if (this.effects.speed) {
-            hero.rawStats.speed += this.effects.speed;
-            console.log(`  +${this.effects.speed} к скорости`);
-        }
-        if (this.effects.critChance) {
-            hero.critChance = (hero.critChance || 0) + this.effects.critChance;
-            console.log(`  +${Math.round(this.effects.critChance * 100)}% к крит. шансу`);
-        }
-        if (this.effects.critDamage) {
-            hero.critDamage = (hero.critDamage || 1.5) + this.effects.critDamage;
-            console.log(`  +${Math.round(this.effects.critDamage * 100)}% к крит. урону`);
-        }
-        if (this.effects.lifesteal) {
-            hero.lifesteal = (hero.lifesteal || 0) + this.effects.lifesteal;
-            console.log(`  +${Math.round(this.effects.lifesteal * 100)}% к вампиризму`);
-        }
-    }
-    
-    // НОВЫЙ МЕТОД: Активировать активный навык
+    // Активировать активный навык
     activate() {
         if (this.type !== 'active' || this.cooldown > 0) return false;
         
@@ -1783,7 +1843,7 @@ class Skill {
         console.log(`✨ Активирован навык: ${this.name}`);
         
         // Применяем временные эффекты
-        if (this.effects.special) {
+        if (this.effects && this.effects.special) {
             this.hero.specialEffects = this.hero.specialEffects || [];
             this.hero.specialEffects.push({
                 ...this.effects.special,
@@ -1795,7 +1855,7 @@ class Skill {
         return true;
     }
     
-    // НОВЫЙ МЕТОД: Обновление активного навыка (вызывается каждый кадр)
+    // Обновление активного навыка
     update(deltaTime) {
         if (this.cooldown > 0) {
             this.cooldown -= deltaTime;
@@ -1804,19 +1864,13 @@ class Skill {
         if (this.isActive) {
             this.activeTimer -= deltaTime;
             
-            // Применяем эффекты длящихся навыков
-            if (this.effects.damagePerSecond) {
-                // Наносим урон врагам вокруг
-                this.applyAreaDamage(deltaTime);
-            }
-            
             if (this.activeTimer <= 0) {
                 this.deactivate();
             }
         }
     }
     
-    // НОВЫЙ МЕТОД: Деактивировать навык
+    // Деактивировать навык
     deactivate() {
         this.isActive = false;
         
@@ -1829,23 +1883,6 @@ class Skill {
         
         console.log(`✨ Навык ${this.name} закончил действие`);
     }
-    
-    // НОВЫЙ МЕТОД: Применить урон по области
-    applyAreaDamage(deltaTime) {
-        if (!this.hero || !window.currentArena) return;
-        
-        const arena = window.currentArena;
-        arena.enemies.forEach(enemy => {
-            const distance = Math.hypot(
-                enemy.worldX - this.hero.worldX,
-                enemy.worldY - this.hero.worldY
-            );
-            
-            if (distance < this.effects.radius) {
-                enemy.takeDamage(this.effects.damagePerSecond * deltaTime);
-            }
-        });
-    }
 }
 
 // Менеджер навыков
@@ -1856,22 +1893,24 @@ class SkillManager {
     }
     
     initSkills() {
-        const config = window.SkillConfig;
+        const config = window.SkillConfig || {};
         
         // Загружаем все навыки из конфигурации
         Object.values(config).forEach(category => {
-            category.forEach(skillData => {
-                this.skills.push(new Skill(
-                    skillData.id,
-                    skillData.name,
-                    skillData.description,
-                    skillData.type || 'passive',
-                    skillData.heroClasses,
-                    skillData.levelRequirement,
-                    skillData.effects,
-                    skillData.icon
-                ));
-            });
+            if (Array.isArray(category)) {
+                category.forEach(skillData => {
+                    this.skills.push(new Skill(
+                        skillData.id,
+                        skillData.name,
+                        skillData.description,
+                        skillData.type || 'passive',
+                        skillData.heroClasses,
+                        skillData.levelRequirement,
+                        skillData.effects,
+                        skillData.icon
+                    ));
+                });
+            }
         });
         
         console.log('Навыки инициализированы:', this.skills.length);
@@ -1925,8 +1964,10 @@ class SkillManager {
         return true;
     }
     
-    // НОВЫЙ МЕТОД: Обновление всех активных навыков героя
+    // Обновление всех активных навыков героя
     updateHeroSkills(hero, deltaTime) {
+        if (!hero || !hero.learnedSkills) return;
+        
         hero.learnedSkills.forEach(skill => {
             if (skill.type === 'active') {
                 skill.update(deltaTime);
@@ -3058,6 +3099,822 @@ const InventoryTemplate = {
 };
 
 window.InventoryTemplate = InventoryTemplate;
+```
+Проверяем наличие каждого из методов, если они отсутствуют добавляем из примера ниже:
+
+```javascript
+// js/core/GameState.js (добавляем недостающие методы)
+
+const GameState = {
+    resources: {
+        proviziya: 10,
+        toplivo: 5,
+        instrumenty: 3
+    },
+    
+    // Общий рюкзак для всех предметов
+    backpack: [],
+    
+    // Склад материалов
+    materials: {
+        wood: 5,
+        iron: 2,
+        cloth: 3
+    },
+    
+    heroes: [],
+    currentHeroId: null,
+    lastPassiveUpdate: Date.now(),
+    
+    shop: null,
+    recipeManager: null,
+    skillManager: null,
+    
+    _listeners: [],
+    
+    // Подписка на изменения
+    subscribe(callback) {
+        this._listeners.push(callback);
+    },
+    
+    notify() {
+        this._listeners.forEach(cb => cb(this));
+    },
+    
+    // Обновление ресурсов
+    updateResource(type, amount) {
+        if (this.resources[type] !== undefined) {
+            this.resources[type] = Math.max(0, Math.round((this.resources[type] + amount) * 10) / 10);
+            this.notify();
+        }
+    },
+    
+    // Добавить предмет в рюкзак
+    addToBackpack(item) {
+        if (!this.backpack) this.backpack = [];
+        this.backpack.push({
+            ...item,
+            instanceId: Date.now() + Math.random() + (item.id || 'item')
+        });
+        console.log(`📦 Предмет добавлен в рюкзак: ${item.name}`);
+        this.notify();
+        return true;
+    },
+    
+    // Удалить предмет из рюкзака
+    removeFromBackpack(itemId) {
+        if (!this.backpack) return false;
+        const index = this.backpack.findIndex(item => 
+            item.id === itemId || item.instanceId === itemId
+        );
+        if (index !== -1) {
+            const item = this.backpack[index];
+            this.backpack.splice(index, 1);
+            console.log(`📦 Предмет удален из рюкзака: ${item.name}`);
+            this.notify();
+            return true;
+        }
+        return false;
+    },
+    
+    // Получить предметы определенного типа из рюкзака
+    getBackpackItemsByType(type) {
+        if (!this.backpack) return [];
+        return this.backpack.filter(item => item.type === type);
+    },
+    
+    // Добавить материалы на склад
+    addMaterial(type, amount) {
+        if (!this.materials) {
+            this.materials = { wood: 0, iron: 0, cloth: 0 };
+        }
+        if (this.materials[type] !== undefined) {
+            this.materials[type] += amount;
+            console.log(`📦 Материалы добавлены: ${type} +${amount}`);
+            this.notify();
+            return true;
+        }
+        return false;
+    },
+    
+    // Потратить материалы со склада
+    useMaterial(type, amount) {
+        if (!this.materials) return false;
+        if (this.materials[type] !== undefined && this.materials[type] >= amount) {
+            this.materials[type] -= amount;
+            console.log(`📦 Материалы использованы: ${type} -${amount}`);
+            this.notify();
+            return true;
+        }
+        return false;
+    },
+    
+    // Получить все материалы
+    getMaterials() {
+        if (!this.materials) {
+            this.materials = { wood: 0, iron: 0, cloth: 0 };
+        }
+        return { ...this.materials };
+    },
+    
+    // Проверить, хватает ли материалов
+    hasEnoughMaterials(requirements) {
+        if (!this.materials) return false;
+        for (const req of requirements) {
+            const materialKey = req.itemId.replace('material_', '');
+            if ((this.materials[materialKey] || 0) < req.quantity) {
+                return false;
+            }
+        }
+        return true;
+    },
+    
+    // Выбрать героя для боя
+    selectHero(heroId) {
+        this.currentHeroId = heroId;
+        this.notify();
+        const heroNameSpan = document.getElementById('currentHeroName');
+        const hero = this.heroes.find(h => h.id === heroId);
+        if (hero) {
+            heroNameSpan.textContent = `Герой: ${hero.name}`;
+        } else {
+            heroNameSpan.textContent = 'Герой: Не выбран';
+        }
+    },
+    
+    // Получить текущего героя
+    getCurrentHero() {
+        return this.heroes.find(h => h.id === this.currentHeroId);
+    },
+    
+    // Пассивное обновление ресурсов
+    passiveUpdate() {
+        const now = Date.now();
+        const diffSeconds = Math.floor((now - this.lastPassiveUpdate) / 1000);
+        
+        if (diffSeconds >= 1) {
+            const resourcesGained = {
+                proviziya: 0,
+                toplivo: 0,
+                instrumenty: 0
+            };
+            
+            this.heroes.forEach(hero => {
+                if (hero.isUnlocked) {
+                    resourcesGained.proviziya += 0.05 * diffSeconds;
+                    resourcesGained.toplivo += 0.03 * diffSeconds;
+                    resourcesGained.instrumenty += 0.02 * diffSeconds;
+                }
+            });
+            
+            this.resources.proviziya = Math.round((this.resources.proviziya + resourcesGained.proviziya) * 10) / 10;
+            this.resources.toplivo = Math.round((this.resources.toplivo + resourcesGained.toplivo) * 10) / 10;
+            this.resources.instrumenty = Math.round((this.resources.instrumenty + resourcesGained.instrumenty) * 10) / 10;
+            
+            this.lastPassiveUpdate = now;
+            
+            if (this.shop) {
+                this.shop.checkAndRefresh();
+            }
+            
+            this.notify();
+        }
+    },
+    
+    // Инициализация магазина
+    initShop() {
+        this.shop = new window.Shop();
+        this.notify();
+    },
+    
+    // Инициализация рецептов
+    initRecipes() {
+        this.recipeManager = new window.RecipeManager();
+        this.notify();
+    },
+    
+    // Инициализация навыков
+    initSkills() {
+        this.skillManager = new window.SkillManager();
+        this.notify();
+    },
+    
+    // Крафт предмета
+    craftItem(recipeId, heroId) {
+        if (!this.recipeManager) {
+            return { success: false, message: 'Система крафта не инициализирована' };
+        }
+        
+        const hero = this.heroes.find(h => h.id === heroId);
+        if (!hero) {
+            return { success: false, message: 'Герой не найден' };
+        }
+        
+        const recipe = this.recipeManager.getRecipe(recipeId);
+        if (!recipe) {
+            return { success: false, message: 'Рецепт не найден' };
+        }
+        
+        if (!recipe.isUnlocked) {
+            return { success: false, message: 'Рецепт еще не открыт' };
+        }
+        
+        if (hero.level < recipe.requiredLevel) {
+            return { success: false, message: `Требуется уровень ${recipe.requiredLevel}` };
+        }
+        
+        if (!this.hasEnoughMaterials(recipe.materials)) {
+            return { success: false, message: 'Недостаточно материалов' };
+        }
+        
+        // Списываем материалы со склада
+        for (const material of recipe.materials) {
+            const materialKey = material.itemId.replace('material_', '');
+            this.useMaterial(materialKey, material.quantity);
+        }
+        
+        // Добавляем результат в рюкзак
+        this.addToBackpack(recipe.resultItem);
+        
+        // Пытаемся открыть новый рецепт
+        const newRecipe = recipe.tryUnlockNewRecipe(this.recipeManager.recipes);
+        
+        let message = `Создан ${recipe.resultItem.name}`;
+        if (newRecipe) {
+            message += `\n🔓 Открыт новый рецепт: ${newRecipe.name}!`;
+        }
+        
+        return {
+            success: true,
+            message: message,
+            item: recipe.resultItem,
+            newRecipe: newRecipe
+        };
+    },
+    
+    // Купить предмет в магазине
+    buyItem(itemId, heroId) {
+        if (!this.shop) {
+            return { success: false, message: 'Магазин не инициализирован' };
+        }
+        
+        const hero = this.heroes.find(h => h.id === heroId);
+        if (!hero) {
+            return { success: false, message: 'Герой не найден' };
+        }
+        
+        const item = this.shop.dailyItems.find(i => i.id === itemId);
+        if (!item) {
+            return { success: false, message: 'Предмет не найден' };
+        }
+        
+        const price = item.getPrice();
+        
+        if (this.resources.proviziya < price) {
+            return { success: false, message: 'Недостаточно провизии' };
+        }
+        
+        this.updateResource('proviziya', -price);
+        
+        if (item.type === 'material') {
+            this.addMaterial(item.id.replace('material_', ''), item.amount || 1);
+        } else {
+            this.addToBackpack({ ...item });
+        }
+        
+        return {
+            success: true,
+            message: `Куплен ${item.name} за ${price} провизии`,
+            item: item
+        };
+    },
+    
+    // Добавить награды после боя
+    addBattleRewards() {
+        const materials = [
+            { type: 'wood', amount: Math.floor(Math.random() * 3) + 1 },
+            { type: 'iron', amount: Math.floor(Math.random() * 2) },
+            { type: 'cloth', amount: Math.floor(Math.random() * 2) }
+        ];
+        
+        materials.forEach(m => {
+            if (m.amount > 0) {
+                this.addMaterial(m.type, m.amount);
+            }
+        });
+        
+        if (this.recipeManager && Math.random() < 0.3) {
+            const newRecipe = this.recipeManager.tryUnlockRandomRecipe();
+            if (newRecipe) {
+                return {
+                    materials: materials,
+                    newRecipe: newRecipe
+                };
+            }
+        }
+        
+        return { materials: materials };
+    }
+};
+
+window.GameState = GameState;
+
+setInterval(() => {
+    window.GameState.passiveUpdate();
+}, 1000);
+```
+
+Перепишем контроллер что бы избежать ошибки с переменными, замените код ArenaController.js на этот полностью:
+
+```javascript
+// js/arena/ArenaController.js (исправленная версия)
+
+class ArenaController {
+    constructor() {
+        // Создаём менеджер спрайтов
+        if (!window.spriteManager) {
+            window.spriteManager = new SpriteManager();
+        }
+        this.arena = null;
+        this.initEventListeners();
+    }
+    
+    initEventListeners() {
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resumeBtn = document.getElementById('resumeBtn');
+        const exitBtn = document.getElementById('exitArenaBtn');
+        
+        if (pauseBtn) {
+            pauseBtn.addEventListener('click', () => {
+                if (this.arena) {
+                    this.arena.togglePause();
+                }
+            });
+        }
+        
+        if (resumeBtn) {
+            resumeBtn.addEventListener('click', () => {
+                if (this.arena) {
+                    this.arena.togglePause();
+                }
+            });
+        }
+        
+        if (exitBtn) {
+            exitBtn.addEventListener('click', () => {
+                if (this.arena) {
+                    this.arena.exitArena();
+                }
+            });
+        }
+    }
+    
+    startExpedition(location, hero) {
+        if (!hero) {
+            alert('Сначала выберите героя в меню "Герои"!');
+            return false;
+        }
+        
+        console.log('Starting expedition with hero:', hero);
+        
+        // ИСПРАВЛЕНИЕ: Используем rawStats.hp вместо baseStats.hp
+        // и обновляем currentStats.hp для боя
+        hero.currentStats.hp = hero.rawStats.hp;
+        
+        // Создаём арену
+        this.arena = new SurvivorsArena('gameCanvas');
+        this.arena.init(hero, location); // Передаём локацию
+        
+        // Переключаем экран
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screenArena').classList.add('active');
+        
+        // Скрываем навигацию
+        document.querySelector('.game-nav').style.display = 'none';
+        
+        // Принудительно скрываем основной хедер
+        const gameHeader = document.querySelector('.game-header');
+        if (gameHeader) {
+            gameHeader.style.display = 'none';
+            gameHeader.style.visibility = 'hidden';
+        }
+        
+        // Даем время на перерисовку DOM
+        setTimeout(() => {
+            // Запускаем арену
+            this.arena.start();
+        }, 100);
+        
+        return true;
+    }
+}
+
+window.ArenaController = ArenaController;
+```
+
+Исправляем SurvivorsArena.js - метод init должен принимать location
+```javascript
+// В js/arena/SurvivorsArena.js обновляем метод init
+
+init(heroData, location = 'forest') {
+    console.log('Инициализация арены с героем:', heroData);
+    
+    // Сохраняем локацию для фона
+    this.currentLocation = location;
+    
+    this.resizeCanvas();
+    
+    setTimeout(() => {
+        if (this.isRunning) {
+            this.resizeCanvas();
+        }
+    }, 50);
+
+    // Размещаем героя в центре мира
+    this.hero = new ArenaHero(this.worldWidth / 2, this.worldHeight / 2, heroData);
+    this.enemies = [];
+    this.expGems = [];
+    this.chests = [];
+    
+    this.gameTime = 0;
+    this.skillChoiceShown = false;
+    this.firstFrame = true;
+
+    // Создаем менеджер волн
+    this.waveManager = new WaveManager(this);
+
+    if (!this.hero.heroData.learnedSkills) {
+        this.hero.heroData.learnedSkills = [];
+    }
+
+    this.updateCamera();
+
+    // Спавним первый сундук
+    this.spawnChest();
+
+    const pauseMenu = document.getElementById('pauseMenu');
+    if (pauseMenu) {
+        pauseMenu.style.display = 'none';
+    }
+}
+```
+
+Исправляем ArenaHero - конструктор должен правильно принимать heroData
+```javascript
+// В js/arena/GameEntity.js обновляем класс ArenaHero
+
+class ArenaHero extends ArenaEntity {
+    constructor(worldX, worldY, heroData) {
+        super(worldX, worldY, 24, '#4aff4a');
+        
+        this.heroData = heroData;
+        
+        // ИСПРАВЛЕНИЕ: Используем правильные поля из heroData
+        this.hp = heroData.currentStats.hp;
+        this.maxHp = heroData.maxHp || heroData.rawStats.hp;
+        this.level = heroData.level;
+        this.exp = heroData.exp;
+        this.speed = heroData.rawStats.speed || 5;
+        
+        this.attack = heroData.rawStats.attack || 10;
+        this.defense = heroData.rawStats.defense || 5;
+        
+        this.expMagnet = 150;
+        this.weapons = [];
+        this.skillEffects = [];
+        
+        // Тип героя
+        this.heroType = heroData.type;
+        
+        // Ключ спрайта для героя
+        this.spriteKey = this.heroType;
+    
+        // Загружаем оружие
+        this.loadWeapons();
+    
+        // Для анимации
+        this.animationFrame = 0;
+        this.lastAttackTime = 0;
+        this.bobSpeed = 10;
+    
+        // Специальные способности
+        this.traps = [];
+        this.trapCooldown = 0;
+        this.trapInterval = 5;
+    
+        // Для мага
+        this.magicBeam = null;
+        this.magicCooldown = 0;
+        this.magicInterval = 8;
+    
+        // Расходники в бою
+        this.battleConsumables = [];
+        this.loadConsumables();
+    
+        // Убеждаемся что у heroData есть массив для навыков
+        if (!this.heroData.learnedSkills) {
+            this.heroData.learnedSkills = [];
+        }
+    }
+    
+    loadWeapons() {
+        // Проверяем наличие оружия в экипировке
+        if (this.heroData.equipment) {
+            // Ищем оружие в слотах
+            const weaponSlot = this.heroData.equipment.weapon1 || this.heroData.equipment.weapon;
+            if (weaponSlot) {
+                this.weapons.push(new ArenaWeapon(this, weaponSlot, this.heroType));
+                return;
+            }
+        }
+        
+        // Если оружия нет, используем стартовое из конфига
+        const classConfig = window.HeroClassConfig[this.heroType];
+        if (classConfig && classConfig.startingWeapon) {
+            this.weapons.push(new ArenaWeapon(this, classConfig.startingWeapon, this.heroType));
+        } else {
+            // Базовое оружие по умолчанию
+            this.weapons.push(new ArenaWeapon(this, {
+                name: 'Кулаки',
+                damage: 5,
+                range: 60,
+                cooldown: 1.0,
+                type: 'melee',
+                icon: '👊'
+            }, this.heroType));
+        }
+    }
+
+    loadConsumables() {
+        // Загружаем расходники из рюкзака (первые 3)
+        const backpack = window.GameState.backpack || [];
+        const consumables = backpack.filter(item => item && item.type === 'consumable');
+        this.battleConsumables = consumables.slice(0, 3).map(item => ({ ...item }));
+    }
+
+    takeDamage(amount) {
+        // Используем метод calculateDamage героя для учета защиты, критов и блоков
+        const reducedDamage = this.heroData.calculateDamage(amount);
+        this.hp -= reducedDamage;
+        this.hitEffect = 0.2;
+        
+        if (this.hp < 0) this.hp = 0;
+        return this.hp <= 0;
+    }
+
+    update(deltaTime, worldWidth, worldHeight) {
+        super.update(deltaTime, worldWidth, worldHeight);
+
+        // Обновляем оружие
+        this.weapons.forEach(w => w.update(deltaTime));
+
+        // Обновляем специальные способности
+        if (this.heroType === 'rogue') {
+            this.updateTraps(deltaTime);
+        } else if (this.heroType === 'mage') {
+            this.updateMagic(deltaTime);
+        }
+
+        // Анимация
+        this.animationFrame += deltaTime * 10;
+    }
+
+    updateTraps(deltaTime) {
+        if (this.trapCooldown > 0) {
+            this.trapCooldown -= deltaTime;
+        }
+
+        if (this.trapCooldown <= 0) {
+            this.traps.push(new ArenaTrap(this.worldX, this.worldY));
+            this.trapCooldown = this.trapInterval;
+        }
+
+        this.traps = this.traps.filter(trap => trap.isActive);
+        this.traps.forEach(trap => trap.update(deltaTime));
+    }
+
+    updateMagic(deltaTime) {
+        if (this.magicCooldown > 0) {
+            this.magicCooldown -= deltaTime;
+        }
+
+        if (this.magicCooldown <= 0 && !this.magicBeam) {
+            if (Math.abs(this.vx) > 0.1 || Math.abs(this.vy) > 0.1) {
+                this.magicBeam = new MagicBeam(this);
+                this.magicCooldown = 5.0;
+            }
+        }
+
+        if (this.magicBeam) {
+            this.magicBeam.update(deltaTime);
+            if (!this.magicBeam.isActive) {
+                this.magicBeam = null;
+            }
+        }
+    }
+
+    useConsumable(slotIndex) {
+        if (slotIndex < 0 || slotIndex >= this.battleConsumables.length) return false;
+
+        const item = this.battleConsumables[slotIndex];
+        if (!item) return false;
+
+        if (item.effect === 'heal') {
+            this.hp = Math.min(this.hp + item.value, this.maxHp);
+            this.battleConsumables.splice(slotIndex, 1);
+            return true;
+        } else if (item.effect === 'buff') {
+            this.attack += item.value;
+            setTimeout(() => {
+                this.attack -= item.value;
+            }, 10000);
+            this.battleConsumables.splice(slotIndex, 1);
+            return true;
+        }
+
+        return false;
+    }
+
+    addExp(amount) {
+        this.exp += amount;
+        
+        // Передаем опыт в heroData
+        if (this.heroData) {
+            const leveledUp = this.heroData.addExp(amount);
+            if (leveledUp) {
+                this.level = this.heroData.level;
+                this.maxHp = this.heroData.maxHp;
+                this.attack = this.heroData.rawStats.attack;
+            }
+        }
+    }
+
+    levelUp() {
+        this.level++;
+        this.exp -= 100;
+        
+        this.maxHp += 10;
+        this.hp = this.maxHp;
+        this.attack += 2;
+        
+        if (this.heroData) {
+            this.heroData.levelUp();
+        }
+        
+        console.log(`Герой повысил уровень до ${this.level}!`);
+    }
+
+    draw(ctx, cameraX, cameraY) {
+        const screenX = this.getScreenX(cameraX);
+        const screenY = this.getScreenY(cameraY) + this.bobOffset;
+        
+        if (screenX + this.radius < 0 || screenX - this.radius > ctx.canvas.width ||
+            screenY + this.radius < 0 || screenY - this.radius > ctx.canvas.height) {
+            return;
+        }
+        
+        ctx.save();
+        
+        // Эффект получения урона
+        if (this.hitEffect > 0) {
+            ctx.globalAlpha = 0.7;
+            ctx.filter = 'brightness(1.5)';
+        }
+        
+        // Получаем спрайт героя
+        let sprite = this.spriteManager ? this.spriteManager.getSprite(this.spriteKey) : null;
+        
+        if (sprite) {
+            // Небольшой наклон при движении для эффекта бега
+            if (this.vx !== 0 || this.vy !== 0) {
+                ctx.translate(screenX, screenY);
+                ctx.rotate(Math.sin(this.animationTimer * 2) * 0.03);
+                ctx.translate(-screenX, -screenY);
+            }
+            
+            ctx.drawImage(sprite, screenX - 24, screenY - 24, 48, 48);
+        } else {
+            // Fallback - цветной круг
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Иконка класса
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            let icon = '⚔️';
+            if (this.heroType === 'archer') icon = '🏹';
+            if (this.heroType === 'mage') icon = '🔮';
+            if (this.heroType === 'rogue') icon = '🗡️';
+            
+            ctx.fillText(icon, screenX, screenY);
+        }
+        
+        ctx.restore();
+        
+        // Полоска здоровья
+        const hpPercent = this.hp / this.maxHp;
+        const barWidth = 40;
+        const barHeight = 4;
+        
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(screenX - barWidth/2, screenY - this.radius - 8, barWidth, barHeight);
+        
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(screenX - barWidth/2, screenY - this.radius - 8, barWidth * hpPercent, barHeight);
+        
+        // Уровень
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 12px Arial';
+        ctx.fillText(`Lv.${this.level}`, screenX - 15, screenY - this.radius - 12);
+        
+        // Имя героя
+        ctx.font = '10px Arial';
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.fillText(this.heroData.name, screenX, screenY - 35);
+        
+        // Рисуем расходники
+        if (this.battleConsumables.length > 0) {
+            ctx.font = '10px Arial';
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'left';
+            for (let i = 0; i < this.battleConsumables.length; i++) {
+                const item = this.battleConsumables[i];
+                if (item) {
+                    ctx.fillText(item.icon, screenX - 30 + i * 20, screenY - 45);
+                }
+            }
+        }
+        
+        // Рисуем оружие
+        this.weapons.forEach(w => w.draw(ctx, cameraX, cameraY));
+        
+        // Рисуем ловушки для разбойника
+        if (this.heroType === 'rogue') {
+            this.traps.forEach(trap => trap.draw(ctx, cameraX, cameraY));
+        }
+        
+        // Рисуем магию для мага
+        if (this.heroType === 'mage' && this.magicBeam) {
+            this.magicBeam.draw(ctx, cameraX, cameraY);
+        }
+    }
+}
+
+```
+
+В game.js метод инициализации игры заменяем этим кодом
+
+```javascript
+// js/game.js (добавить инициализацию в initializeGame)
+
+function initializeGame() {
+    console.log('🎮 Инициализация игры...');
+    
+    // Инициализируем хранилища
+    if (!window.GameState.backpack) window.GameState.backpack = [];
+    if (!window.GameState.materials) {
+        window.GameState.materials = {
+            wood: 5,
+            iron: 2,
+            cloth: 3
+        };
+    }
+    
+    // Создаем героев
+    const warrior = new window.Hero('1', 'Воин', { hp: 120, attack: 18, defense: 12, speed: 8 }, 'warrior');
+    const archer = new window.Hero('2', 'Лучник', { hp: 80, attack: 22, defense: 6, speed: 15 }, 'archer');
+    const mage = new window.Hero('3', 'Маг', { hp: 70, attack: 25, defense: 4, speed: 12 }, 'mage');
+    const rogue = new window.Hero('4', 'Разбойник', { hp: 90, attack: 16, defense: 8, speed: 18 }, 'rogue');
+    
+    window.GameState.heroes.push(warrior, archer, mage, rogue);
+    window.GameState.selectHero('1');
+    
+    // Добавляем тестовые предметы в рюкзак
+    window.GameState.addToBackpack(new window.Weapon('weapon_sword_1', 'Деревянный меч', 'common', 10, { damage: 5, range: 1 }, '⚔️'));
+    window.GameState.addToBackpack(new window.Weapon('weapon_bow_1', 'Короткий лук', 'common', 15, { damage: 7, range: 3 }, '🏹'));
+    window.GameState.addToBackpack(new window.Armor('armor_cloth_1', 'Тканевая броня', 'common', 8, { defense: 3, hp: 5 }, '👕'));
+    
+    // Добавляем тестовые материалы
+    window.GameState.addMaterial('wood', 5);
+    window.GameState.addMaterial('iron', 2);
+    window.GameState.addMaterial('cloth', 3);
+    
+    // Инициализируем системы
+    window.GameState.initShop();
+    window.GameState.initRecipes();
+    window.GameState.initSkills();
+    
+    window.ui = new window.UIManager();
+    window.arenaController = new window.ArenaController();
+    
+    console.log('✅ Игра готова!');
+}
 ```
 
 #### 5.2 Обновляем `js/ui/UIManager.js` - используем новые методы GameState
