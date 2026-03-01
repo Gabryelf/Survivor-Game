@@ -74,13 +74,13 @@ images/
 ├── heroes/               # Аватарки героев в меню и спрайты на арене
 │   ├── warrior.png       # Воин
 │   ├── archer.png        # Лучник
-│   ├── elementalist.png  # Маг (обратите внимание: elementalist, а не mage)
-│   └── assasin.png       # Разбойник (assasin, а не rogue)
+│   ├── elementalist.png  # Маг
+│   └── assasin.png       # Разбойник 
 ├── enemies/              # Спрайты врагов
-│   ├── peasant.png       # Гоблин/крестьянин
-│   ├── ronin.png         # Скелет/ронин
-│   ├── bandit.png        # Призрак/бандит
-│   └── raider.png        # Орк/рейдер
+│   ├── peasant.png       # Крестьянин
+│   ├── ronin.png         # Ронин
+│   ├── bandit.png        # Бандит
+│   └── raider.png        # Рейдер
 └── items/                # Предметы
     ├── gem_yellow.png    # Кристалл опыта
     └── potion_red.png    # Зелье
