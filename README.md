@@ -349,6 +349,17 @@ const GameState = {
 
 Найдите место после метода `updateMaterial` и добавьте:
 
+Добавить метод updateMaterial() если его нет в GameState:
+```javascript
+    // Обновление материалов инвентаря
+    updateMaterial(type, amount) {
+        if (this.inventory[type] !== undefined) {
+            this.inventory[type] = Math.max(0, this.inventory[type] + amount);
+            this.notify();
+        }
+    },
+```
+
 ```javascript
     /**
      * Получить все материалы для отображения в удобном формате
