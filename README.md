@@ -34,6 +34,34 @@
 
 Это полностью новый файл. Создайте его в папке `core/`. Здесь будут жить классы для системы крафта.
 
+### Шаг 0. Добавить методы для работы инвенторя
+```javascript
+// Добавить предмет в инвентарь
+    addToInventory(item) {
+        this.inventory.push({
+            ...item,
+            instanceId: Date.now() + Math.random() + item.id // Уникальный ID для экземпляра
+        });
+        this.notify();
+    },
+    
+    // Удалить предмет из инвентаря
+    removeFromInventory(itemId) {
+        const index = this.inventory.findIndex(item => item.id === itemId || item.instanceId === itemId);
+        if (index !== -1) {
+            this.inventory.splice(index, 1);
+            this.notify();
+            return true;
+        }
+        return false;
+    },
+    
+    // Получить предметы определенного типа
+    getItemsByType(type) {
+        return this.inventory.filter(item => item.type === type);
+    },
+```
+
 ### Шаг 1.1. Класс Recipe (базовый рецепт)
 
 Вставьте этот код в новый файл:
